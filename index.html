@@ -445,6 +445,24 @@
   .hist-date { font-weight: 700; font-size: 14px; color: var(--accent-deep); white-space: nowrap; }
   .hist-recipes { font-size: 13.5px; flex: 1; }
 
+  /* ---------- 特売メモ ---------- */
+  .tokubai-entry { padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .tokubai-entry:last-child { border-bottom: none; }
+  .tokubai-head { font-size: 14px; }
+  .tokubai-head .t-store { font-weight: 700; color: var(--accent-deep); }
+  .tokubai-head .t-period { font-size: 12px; color: var(--muted); margin-left: 6px; }
+  ul.tokubai-items { list-style: none; font-size: 13px; margin-top: 3px; }
+  ul.tokubai-items li { display: flex; justify-content: space-between; gap: 10px; padding: 1.5px 0; }
+  ul.tokubai-items li .t-price { color: var(--accent-deep); font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .tokubai-note { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+  .card-dates {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 12px;
+    text-align: right;
+  }
+
   /* ---------- 運用 ---------- */
   .ops-card {
     background: var(--card);
@@ -555,6 +573,10 @@
     <div class="panel">
       <h3>調理履歴</h3>
       <div id="histList"></div>
+    </div>
+    <div class="panel" id="tokubaiPanel" hidden>
+      <h3>特売メモ <span class="sub">毎週のチラシから自動記録</span></h3>
+      <div id="tokubaiList"></div>
     </div>
   </div>
 
@@ -700,6 +722,7 @@ const RECIPES = [
   // ---------- 低温調理 ----------
   {
     id: "consomme-chicken", cat: "lowtemp", catName: "低温調理",
+    updated: "2026-08-30",
     name: "コンソメ醤油チキン",
     desc: "定番の子供OK味。ブライン漬けでしっとり",
     time: "65℃・2時間", kids: true, protein: true, keep: "冷蔵3〜4日",
@@ -760,6 +783,7 @@ const RECIPES = [
   },
   {
     id: "magic-salt-chicken", cat: "lowtemp", catName: "低温調理",
+    added: "2026-08-30",
     name: "マジックソルトチキン",
     desc: "ハーブサラダチキン風。マジックソルト+はちみつだけ",
     time: "65℃・2時間", protein: true, keep: "冷蔵3〜4日",
@@ -815,6 +839,7 @@ const RECIPES = [
   },
   {
     id: "pork-miso", cat: "lowtemp", catName: "低温調理",
+    updated: "2026-08-30",
     name: "豚ロースの味噌漬け",
     desc: "玉ねぎ×はちみつでしっとり柔らか。ビタミンB1補給",
     time: "65℃・2.5時間", protein: true, keep: "冷蔵3〜4日",
@@ -1063,6 +1088,13 @@ function fmtDate(iso) {
   const d = new Date(+p[0], +p[1] - 1, +p[2]);
   return (+p[1]) + "月" + (+p[2]) + "日(" + WDAY[d.getDay()] + ")";
 }
+// 年つき表示(レシピの登録日・特売メモ用)
+function fmtDateY(iso) {
+  const p = (iso || "").split("-");
+  if (p.length !== 3) return iso || "";
+  return (+p[0]) + "年" + (+p[1]) + "月" + (+p[2]) + "日";
+}
+const RECIPE_EPOCH = "2026-08-29"; // addedのないレシピはサイト開設日扱い
 
 // ============================================================
 // レシピカード生成(初回のみ)
@@ -1116,6 +1148,8 @@ RECIPES.forEach(r => {
       ((r.notes && r.notes.length)
         ? '<div class="sec-label">メモ</div><ul class="notes">' + r.notes.map(s => "<li>" + esc(s) + "</li>").join("") + "</ul>"
         : "") +
+      '<div class="card-dates">登録: ' + esc(fmtDateY(r.added || RECIPE_EPOCH)) +
+        (r.updated ? " ・ 改良: " + esc(fmtDateY(r.updated)) : "") + "</div>" +
     "</div>";
   cardsEl.appendChild(d);
 });
@@ -1327,6 +1361,36 @@ function renderHistory() {
     if (dt) b.textContent = "前回: " + fmtDate(dt);
   });
 }
+// ============================================================
+// 特売メモ(data/tokubai-log.json を定期タスクが更新)
+// ============================================================
+async function loadTokubai() {
+  let log = null;
+  try {
+    const res = await fetch("data/tokubai-log.json", { cache: "no-store" });
+    if (!res.ok) return;
+    log = await res.json();
+  } catch (e) { return; }
+  if (!Array.isArray(log)) return;
+  const entries = log.filter(t => t && typeof t === "object");
+  if (!entries.length) return;
+  entries.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  document.getElementById("tokubaiList").innerHTML = entries.map(t => {
+    const items = Array.isArray(t.items) ? t.items.filter(x => x && x.n) : [];
+    return '<div class="tokubai-entry">' +
+      '<div class="tokubai-head"><span class="hist-date">' + esc(fmtDate(String(t.date || ""))) + "</span> " +
+        '<span class="t-store">' + esc(String(t.store || "")) + "</span>" +
+        (t.period ? '<span class="t-period">' + esc(String(t.period)) + "</span>" : "") + "</div>" +
+      (items.length
+        ? '<ul class="tokubai-items">' + items.map(x =>
+            "<li><span>" + esc(String(x.n)) + '</span><span class="t-price">' + esc(String(x.p || "")) + "</span></li>").join("") + "</ul>"
+        : "") +
+      (t.note ? '<div class="tokubai-note">' + esc(String(t.note)) + "</div>" : "") +
+    "</div>";
+  }).join("");
+  document.getElementById("tokubaiPanel").hidden = false;
+}
+
 document.getElementById("historyPage").addEventListener("click", e => {
   const del = e.target.closest("[data-del-hist]");
   if (!del) return;
@@ -1400,6 +1464,7 @@ function render() {
   renderHistory();
   renderSyncChip();
   render();
+  loadTokubai();
   // 共有保存機能(claude.ai上でのみ有効。なければローカル保存のまま)
   if (window.claude && typeof window.claude.use === "function") {
     window.claude.use("artifact").then(ns => { artifactNs = ns; }).catch(() => {});
