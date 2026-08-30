@@ -615,6 +615,7 @@
     <button type="button" data-tab="hotcook">ホットクック</button>
     <button type="button" data-tab="lowtemp">低温調理</button>
     <button type="button" data-tab="breakfast">朝食</button>
+    <button type="button" data-tab="sweets">お菓子・デザート</button>
     <button type="button" data-tab="arrange">アレンジ</button>
     <button type="button" data-tab="history">履歴</button>
     <button type="button" data-tab="ops">運用</button>
@@ -1353,6 +1354,144 @@ const RECIPES = [
       "すべて混ぜるだけ"
     ],
     notes: ["サラダチキンのソースにも、タンドリー風チキンの下味にも使える"]
+  },
+  // ---------- お菓子・デザート ----------
+  {
+    id: "amazake", cat: "sweets", catName: "お菓子",
+    added: "2026-08-31",
+    name: "甘酒",
+    desc: "夜セット→朝完成の発酵ストック。砂糖代わりにも",
+    time: "60℃・6〜8時間", kids: true, keep: "冷蔵1週間・冷凍1ヶ月",
+    noScale: true, servLabel: "作りやすい量",
+    ing: [
+      { n: "米麹", t: "200g" },
+      { n: "ご飯", t: "200g" },
+      { n: "水", t: "300ml" }
+    ],
+    steps: [
+      "内鍋にご飯と水を入れて混ぜ、60℃くらいに冷ましてから米麹をほぐして加える",
+      "発酵メニュー60℃で6〜8時間(夜セット→朝完成が楽)",
+      "軽く混ぜて保存容器へ。冷凍は製氷皿で小分けが便利"
+    ],
+    notes: [
+      "そのまま飲む/ヨーグルトにかける/砂糖代わりに料理へ。発酵食品",
+      "熱いご飯に麹を入れると発酵しないので60℃以下に冷ましてから"
+    ]
+  },
+  {
+    id: "apple-compote", cat: "sweets", catName: "お菓子",
+    added: "2026-08-31",
+    name: "りんごのコンポート",
+    desc: "朝ヨーグルトのトッピングに毎日使える",
+    time: "煮物メニュー", kids: true, keep: "冷蔵5日〜1週間",
+    noScale: true, servLabel: "作りやすい量",
+    ing: [
+      { n: "りんご", t: "3〜4個" },
+      { n: "砂糖", p: 1, t: "大さじ3" },
+      { n: "レモン汁", p: 1, t: "大さじ1" }
+    ],
+    steps: [
+      "りんごは皮をむいてくし切りにし、内鍋に入れる",
+      "砂糖とレモン汁をまぶして煮物系メニューでスタート",
+      "粗熱をとって汁ごと保存容器へ"
+    ],
+    notes: ["朝ヨーグルト(登録済み)の冷凍ベリー枠と交代で使える"]
+  },
+  {
+    id: "steamed-sweetpotato", cat: "sweets", catName: "お菓子",
+    added: "2026-08-31",
+    name: "蒸しさつまいも",
+    desc: "材料1つ。子供の平日おやつストック",
+    time: "蒸しメニュー", kids: true, keep: "冷蔵4〜5日",
+    noScale: true, servLabel: "作りやすい量",
+    ing: [
+      { n: "さつまいも(中)", shop: "さつまいも", t: "4〜5本" }
+    ],
+    steps: [
+      "さつまいもを洗って蒸し板にのせ、蒸しメニューで一気に蒸す",
+      "粗熱をとって保存容器へ"
+    ],
+    notes: ["冷やすと甘みが増す。輪切りにしてお弁当にも"]
+  },
+  {
+    id: "purin", cat: "sweets", catName: "お菓子",
+    added: "2026-08-31",
+    name: "プリン",
+    desc: "低温調理で「す」が入らずなめらか",
+    time: "85℃・約30分", kids: true, keep: "冷蔵3日",
+    noScale: true, servLabel: "カップ5〜6個分",
+    ing: [
+      { n: "卵", t: "3個" },
+      { n: "牛乳", t: "400ml" },
+      { n: "砂糖", p: 1, t: "大さじ4" },
+      { n: "バニラエッセンス(あれば)", p: 1, t: "少々" }
+    ],
+    steps: [
+      "卵・牛乳・砂糖をよく混ぜ、一度こしてから耐熱カップ5〜6個に分ける",
+      "カップにアルミホイルで蓋をして内鍋に並べ、カップの半分の高さまで水を張る",
+      "発酵・低温調理85℃で約30分。揺らしてゆるければ10分ずつ延長",
+      "粗熱をとって冷蔵庫でしっかり冷やす"
+    ],
+    notes: ["カラメルは砂糖+水をレンジで。子供はメープルシロップでも"]
+  },
+  {
+    id: "homemade-yogurt", cat: "sweets", catName: "お菓子",
+    added: "2026-08-31",
+    name: "自家製ヨーグルト",
+    desc: "牛乳1Lを一気にヨーグルト化。朝食のコスパ大幅アップ",
+    time: "発酵メニュー", keep: "冷蔵1週間",
+    noScale: true, servLabel: "1L分",
+    ing: [
+      { n: "牛乳", t: "1L" },
+      { n: "種ヨーグルト(市販プレーン)", shop: "プレーンヨーグルト", t: "100g" }
+    ],
+    steps: [
+      "内鍋は熱湯を回しかけて消毒しておく",
+      "牛乳と種ヨーグルトをよく混ぜ、発酵メニュー(ヨーグルト)でスタート",
+      "固まったら清潔な容器に移して冷蔵庫へ"
+    ],
+    notes: [
+      "朝ヨーグルト(登録済み)の材料を自作してコスパ◎",
+      "できたヨーグルトを種に継ぐのは2〜3回まで(衛生面)"
+    ]
+  },
+  {
+    id: "mushipan", cat: "sweets", catName: "お菓子",
+    added: "2026-08-31",
+    name: "蒸しパン",
+    desc: "混ぜて蒸すだけ。ココア・さつまいもアレンジ可",
+    time: "蒸し15分", kids: true, keep: "当日〜翌日",
+    noScale: true, servLabel: "カップ5〜6個分",
+    ing: [
+      { n: "ホットケーキミックス", p: 1, t: "200g" },
+      { n: "牛乳", t: "140ml" },
+      { n: "卵", t: "1個" },
+      { n: "砂糖", p: 1, t: "大さじ1" }
+    ],
+    steps: [
+      "材料をすべて混ぜてカップに7分目まで分ける",
+      "蒸し板に並べて蒸しメニューで約15分",
+      "竹串を刺して生地がつかなければ完成"
+    ],
+    notes: ["ココア大さじ1や角切りさつまいも(蒸しさつまいもの転用)を混ぜてアレンジ"]
+  },
+  {
+    id: "steamed-beans", cat: "sweets", catName: "お菓子",
+    added: "2026-08-31",
+    name: "蒸し大豆・蒸し黒豆",
+    desc: "そのままおやつ、サラダのトッピングに",
+    time: "浸水一晩+蒸し", kids: true, protein: true, keep: "冷蔵5日・冷凍1ヶ月",
+    noScale: true, servLabel: "作りやすい量",
+    ing: [
+      { n: "乾燥大豆または黒豆", shop: "乾燥大豆(or黒豆)", t: "200g" },
+      { n: "水(浸水用)", t: "たっぷり" }
+    ],
+    steps: [
+      "豆はたっぷりの水に一晩浸けて戻す",
+      "水気を切って蒸し板に広げ、蒸しメニューでやわらかくなるまで蒸す(約1時間)",
+      "粗熱をとって保存容器へ。冷凍もOK"
+    ],
+    notes: ["高タンパクおやつ枠。塩少々やきなこをまぶしても"]
   }
 ];
 
@@ -1538,7 +1677,7 @@ RECIPES.forEach(r => {
     return "<tr><td>" + esc(x.n) + "</td>" + amt + "</tr>";
   }).join("");
 
-  const servTag = r.noScale ? "1人分目安" : '<span class="serv-now">4人前</span>';
+  const servTag = r.noScale ? esc(r.servLabel || "1人分目安") : '<span class="serv-now">4人前</span>';
 
   d.innerHTML =
     "<summary>" +
@@ -2002,7 +2141,7 @@ function render() {
   document.getElementById("lowtempInfo").hidden = searching || activeTab !== "lowtemp";
   document.getElementById("mixExample").hidden = searching || activeTab !== "lowtemp";
 
-  const recipeTab = ["hotcook", "lowtemp", "breakfast", "arrange"].includes(activeTab);
+  const recipeTab = ["hotcook", "lowtemp", "breakfast", "sweets", "arrange"].includes(activeTab);
   let visible = 0;
   document.querySelectorAll("details.card").forEach(d => {
     let show;
