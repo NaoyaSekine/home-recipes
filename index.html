@@ -1014,6 +1014,8 @@ RECIPES.forEach(r => { byId[r.id] = r; });
 // ============================================================
 const STATE_FILE = "data/state.json";
 const LS_KEY = "recipe-app-state";
+// Firebase Realtime Database(家族共有)。空文字なら無効=従来動作
+const SYNC_URL = "https://home-recipes-29f4b-default-rtdb.asia-southeast1.firebasedatabase.app/state.json";
 const DEFAULT_STATE = {
   menu: {
     date: "2026-08-30",
@@ -1039,16 +1041,34 @@ function normalizeState(s) {
   s.menu.checked = s.menu.checked || [];
   s.menu.servings = s.menu.servings === 2 ? 2 : 4;
   if (!Array.isArray(s.history)) s.history = [];
-  return s;
+  return { menu: s.menu, history: s.history }; // 未知キーは持ち回らない
 }
 
 function scheduleSave() {
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(doSave, 1200);
+  saveTimer = setTimeout(() => { saveTimer = null; doSave(); }, 1200);
+}
+
+function fetchTimeout(url, ms, opts) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  return fetch(url, Object.assign({ signal: ctrl.signal, cache: "no-store" }, opts || {}))
+    .finally(() => clearTimeout(t));
 }
 
 async function doSave() {
   const json = JSON.stringify(state);
+  try { localStorage.setItem(LS_KEY, json); } catch (e) {}
+  // 1) Firebase(家族共有)
+  if (SYNC_URL) {
+    try {
+      const res = await fetchTimeout(SYNC_URL, 6000, {
+        method: "PUT", body: json, headers: { "Content-Type": "application/json" }
+      });
+      if (res.ok) { syncMode = "cloud"; renderSyncChip(); return; }
+    } catch (e) {}
+  }
+  // 2) claude.aiアーティファクト上の共有保存
   if (artifactNs && !sharedUnavailable) {
     try {
       await artifactNs.publish({ [STATE_FILE]: { content: json, contentType: "application/json" } });
@@ -1065,11 +1085,26 @@ async function doSave() {
       } else sharedUnavailable = true;             // 読み取り専用・リトライ上限 → ローカル保存へ
     }
   }
-  try { localStorage.setItem(LS_KEY, json); syncMode = "local"; } catch (e) {}
+  syncMode = "local"; // localStorageには冒頭で保存済み
   renderSyncChip();
 }
 
 async function loadState() {
+  // 0) Firebase(家族共有・最優先)
+  if (SYNC_URL) {
+    try {
+      const res = await fetchTimeout(SYNC_URL, 5000);
+      if (res.ok) {
+        const data = await res.json(); // 空DBはnull
+        if (data) {
+          state = normalizeState(data);
+          syncMode = "cloud";
+          return;
+        }
+        // 空DB: ローカル値から開始し、次の保存でクラウドに載る
+      }
+    } catch (e) {}
+  }
   // 1) 共有状態ファイル(claude.ai上で家族と共有)
   try {
     const res = await fetch(STATE_FILE, { cache: "no-store" });
@@ -1364,7 +1399,8 @@ document.getElementById("clearBtn").addEventListener("click", () => {
 
 function renderSyncChip() {
   const el = document.getElementById("syncChip");
-  if (syncMode === "shared") el.textContent = "✓ 家族と同期中(このページを開く全員に反映されます)";
+  if (syncMode === "cloud") el.textContent = "✓ 家族と同期中(開いている全員のスマホに反映されます)";
+  else if (syncMode === "shared") el.textContent = "✓ 家族と同期中(このページを開く全員に反映されます)";
   else if (syncMode === "local") el.textContent = "献立チェック・履歴はこの端末に保存されます(端末ごとに独立)";
   else el.textContent = "";
 }
@@ -1410,6 +1446,28 @@ function renderHistory() {
     }
   });
 }
+// 他の家族の更新を取り込む(画面復帰時+60秒ごと)。
+// 自分の未保存変更がある間(saveTimer作動中)は上書きしない
+async function refreshFromCloud() {
+  if (!SYNC_URL || document.hidden || saveTimer !== null) return;
+  try {
+    const res = await fetchTimeout(SYNC_URL, 5000);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data) return;
+    const incoming = normalizeState(data);
+    if (JSON.stringify(incoming) === JSON.stringify(state)) return;
+    if (saveTimer !== null) return; // fetch中に編集が始まっていたら破棄
+    state = incoming;
+    applyServings(false);
+    renderHistory();
+    syncMode = "cloud";
+    renderSyncChip();
+  } catch (e) {}
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) refreshFromCloud(); });
+setInterval(refreshFromCloud, 60000);
+
 // ============================================================
 // 特売メモ(data/tokubai-log.json を定期タスクが更新)
 // ============================================================
