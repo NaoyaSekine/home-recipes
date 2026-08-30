@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>わが家のレシピ帳</title>
+<style>
+  :root {
+    --bg: #F7F8F5;
+    --card: #FFFFFF;
+    --ink: #26302B;
+    --muted: #66716B;
+    --line: #E2E7E2;
+    --accent: #2E7D5B;
+    --accent-soft: #E6F2EC;
+    --accent-deep: #1F5C42;
+    --kids-bg: #FDF3E2;
+    --kids-ink: #9C6612;
+    --protein-bg: #E7EFF9;
+    --protein-ink: #2B5D9B;
+    --time-bg: #EEF1EF;
+    --time-ink: #55605A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.65;
+    font-size: 15px;
+    padding-bottom: 48px;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 16px 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .head-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  h1 {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: var(--accent-deep);
+  }
+  h1 small {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 6px;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  @media (max-width: 460px) {
+    h1 small { display: none; }
+  }
+  .serv-toggle {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .serv-toggle button {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border: none;
+    background: var(--card);
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .serv-toggle button.on {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .search-wrap { position: relative; margin: 12px 0 10px; }
+  .search-wrap input {
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    padding: 9px 36px 9px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-appearance: none;
+  }
+  .search-wrap input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+    background: var(--card);
+  }
+  .search-clear {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px; height: 26px;
+    border: none;
+    border-radius: 50%;
+    background: var(--line);
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+  }
+  .search-wrap.has-text .search-clear { display: block; }
+
+  nav {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+  nav button {
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 9px 12px 11px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+  }
+  nav button.on {
+    color: var(--accent-deep);
+    border-bottom-color: var(--accent);
+  }
+  nav.dim button.on { color: var(--muted); border-bottom-color: var(--line); }
+  nav button .cnt {
+    display: inline-block;
+    min-width: 17px;
+    padding: 0 4px;
+    margin-left: 3px;
+    border-radius: 99px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 10.5px;
+    text-align: center;
+  }
+  nav button .cnt:empty { display: none; }
+
+  /* ---------- main ---------- */
+  main { max-width: 640px; margin: 0 auto; padding: 14px 12px; }
+
+  .info-box {
+    background: var(--accent-soft);
+    border-radius: 12px;
+    padding: 13px 15px;
+    margin-bottom: 14px;
+    font-size: 13.5px;
+  }
+  .info-box strong { color: var(--accent-deep); }
+  .info-box ul { list-style: none; margin-top: 5px; }
+  .info-box li { padding: 2px 0 2px 15px; position: relative; }
+  .info-box li::before {
+    content: "";
+    position: absolute;
+    left: 2px; top: 11px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .search-note {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 10px;
+    display: none;
+  }
+  body.searching .search-note { display: block; }
+
+  /* ---------- recipe card ---------- */
+  details.card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  details.card[open] { border-color: var(--accent); }
+  summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 13px 15px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 14px; }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card-name { font-size: 16px; font-weight: 700; text-wrap: balance; }
+  .card-cat {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border-radius: 5px;
+    padding: 2px 7px;
+    white-space: nowrap;
+    display: none;
+    margin-top: 2px;
+  }
+  body.searching .card-cat { display: inline-block; }
+  .card-desc { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .add-btn {
+    flex-shrink: 0;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 99px;
+    border: 1.5px solid var(--accent);
+    background: var(--card);
+    color: var(--accent-deep);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .add-btn.in {
+    background: var(--accent);
+    color: #fff;
+  }
+  .badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+  .badge {
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 99px;
+    white-space: nowrap;
+  }
+  .b-time { background: var(--time-bg); color: var(--time-ink); }
+  .b-kids { background: var(--kids-bg); color: var(--kids-ink); }
+  .b-protein { background: var(--protein-bg); color: var(--protein-ink); }
+  .b-keep { background: none; color: var(--time-ink); border: 1px solid var(--line); }
+  .b-last { background: var(--accent-soft); color: var(--accent-deep); }
+
+  .card-body { padding: 0 15px 15px; border-top: 1px dashed var(--line); }
+  .sec-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--accent-deep);
+    margin: 14px 0 6px;
+  }
+  .serv-tag {
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    margin-left: 6px;
+  }
+  table.ing { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.ing td { padding: 5px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.ing tr:last-child td { border-bottom: none; }
+  table.ing td.amt {
+    text-align: right;
+    white-space: nowrap;
+    padding-left: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  ol.steps { list-style: none; counter-reset: st; font-size: 14px; }
+  ol.steps li {
+    counter-increment: st;
+    padding: 5px 0 5px 30px;
+    position: relative;
+  }
+  ol.steps li::before {
+    content: counter(st);
+    position: absolute;
+    left: 0; top: 6px;
+    width: 21px; height: 21px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  ul.notes { list-style: none; font-size: 13px; color: var(--muted); }
+  ul.notes li { padding: 3px 0 3px 14px; position: relative; }
+  ul.notes li::before { content: "※"; position: absolute; left: 0; }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 40px 0;
+    font-size: 14px;
+    display: none;
+  }
+
+  /* ---------- 献立・買い物 ---------- */
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 15px;
+    margin-bottom: 10px;
+  }
+  .panel h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--accent-deep);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .panel h3 .sub { font-size: 12px; font-weight: 500; color: var(--muted); }
+  .menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14.5px;
+  }
+  .menu-item:last-child { border-bottom: none; }
+  .menu-item .m-cat {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border-radius: 5px;
+    padding: 1px 6px;
+    margin-right: 7px;
+    white-space: nowrap;
+  }
+  .rm-btn {
+    border: none;
+    background: var(--line);
+    color: var(--muted);
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .menu-empty { color: var(--muted); font-size: 13.5px; padding: 6px 0; }
+  .run-hint {
+    background: var(--accent-soft);
+    border-radius: 9px;
+    padding: 9px 12px;
+    font-size: 13px;
+    margin-top: 10px;
+    color: var(--accent-deep);
+  }
+  .run-hint strong { font-weight: 700; }
+
+  .shop-group { margin-top: 4px; }
+  .shop-group + .shop-group { margin-top: 12px; }
+  .shop-group-name {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  label.shop-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    font-size: 14.5px;
+  }
+  .shop-group label.shop-item:last-child { border-bottom: none; }
+  .shop-item input {
+    width: 19px; height: 19px;
+    margin-top: 3px;
+    accent-color: var(--accent);
+    flex-shrink: 0;
+  }
+  .shop-item .s-name { font-weight: 600; }
+  .shop-item .s-amt { font-size: 12.5px; color: var(--muted); }
+  .shop-item.done .s-name { text-decoration: line-through; color: var(--muted); font-weight: 500; }
+
+  .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+  .btn {
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 11px 16px;
+    border-radius: 11px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: #fff; flex: 1; }
+  .btn-ghost { background: none; border: 1.5px solid var(--line); color: var(--muted); }
+  .flash {
+    background: var(--kids-bg);
+    color: var(--kids-ink);
+    border-radius: 9px;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: none;
+  }
+  .sync-chip {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  /* ---------- 履歴 ---------- */
+  .hist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .hist-item:last-child { border-bottom: none; }
+  .hist-date { font-weight: 700; font-size: 14px; color: var(--accent-deep); white-space: nowrap; }
+  .hist-recipes { font-size: 13.5px; flex: 1; }
+
+  /* ---------- 運用 ---------- */
+  .ops-card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 15px;
+    margin-bottom: 10px;
+  }
+  .ops-card h3 { font-size: 15px; font-weight: 700; color: var(--accent-deep); margin-bottom: 7px; }
+  .ops-card ul { list-style: none; font-size: 14px; }
+  .ops-card li { padding: 4px 0 4px 16px; position: relative; }
+  .ops-card li::before {
+    content: "";
+    position: absolute;
+    left: 2px; top: 13px;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .ops-card .flow {
+    background: var(--accent-soft);
+    border-radius: 9px;
+    padding: 9px 12px;
+    font-size: 13px;
+    margin-top: 8px;
+    color: var(--accent-deep);
+    font-weight: 600;
+  }
+  .warn { color: #A34040; font-weight: 600; }
+
+  footer {
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--muted);
+    padding: 20px 0 0;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-row">
+    <h1>わが家のレシピ帳<small>ホットクック &amp; 低温調理</small></h1>
+    <div class="serv-toggle" role="group" aria-label="人数切り替え">
+      <button type="button" id="serv2">2人前</button>
+      <button type="button" id="serv4" class="on">4人前</button>
+    </div>
+  </div>
+  <div class="search-wrap" id="searchWrap">
+    <input type="search" id="search" placeholder="レシピ名・材料で検索(例: 鶏むね)" aria-label="レシピ検索" autocomplete="off">
+    <button type="button" class="search-clear" id="searchClear" aria-label="検索をクリア">✕</button>
+  </div>
+  <nav id="tabs" aria-label="カテゴリ">
+    <button type="button" data-tab="menu" class="on">献立<span class="cnt" id="menuCnt"></span></button>
+    <button type="button" data-tab="hotcook">ホットクック</button>
+    <button type="button" data-tab="lowtemp">低温調理</button>
+    <button type="button" data-tab="breakfast">朝食</button>
+    <button type="button" data-tab="history">履歴</button>
+    <button type="button" data-tab="ops">運用</button>
+  </nav>
+</header>
+
+<main>
+  <p class="search-note">検索中は全カテゴリから表示しています</p>
+
+  <!-- 献立・買い物 -->
+  <div id="menuPage" hidden>
+    <p class="flash" id="flash"></p>
+    <div class="panel">
+      <h3>今日の献立 <span class="sub" id="menuDate"></span></h3>
+      <div id="menuList"></div>
+      <div class="run-hint" id="runHint" hidden></div>
+    </div>
+    <div class="panel" id="shopPanel" hidden>
+      <h3>買い物リスト <span class="sub" id="shopServ"></span></h3>
+      <div id="shopList"></div>
+    </div>
+    <div class="btn-row" id="menuBtns" hidden>
+      <button type="button" class="btn btn-primary" id="recordBtn">作った!を履歴に記録</button>
+      <button type="button" class="btn btn-ghost" id="clearBtn">クリア</button>
+    </div>
+    <p class="sync-chip" id="syncChip"></p>
+  </div>
+
+  <!-- 低温調理の基本ルール -->
+  <div class="info-box" id="lowtempInfo" hidden>
+    <strong>低温調理の基本ルール(65℃固定)</strong>
+    <ul>
+      <li>耐熱袋(アイラップ等)に <strong>300gずつ</strong> 小分けし、水を張った内鍋に沈める</li>
+      <li>「発酵・低温調理」65℃/2時間。<strong>袋が増えたら2.5時間</strong>に延長</li>
+      <li>生肉・生魚は必ず<strong>別袋</strong>。厚みは2〜3cmに揃える</li>
+      <li>食べる前に<strong>断面を確認</strong>(赤い・生っぽいなら再加熱)</li>
+    </ul>
+  </div>
+
+  <div id="cards"></div>
+
+  <div class="info-box" id="mixExample" hidden>
+    <strong>混載例(1運転で3日分)</strong>
+    <ul>
+      <li>鶏コンソメ醤油 300g+サーモン塩麹 2切れ+豚味噌漬け 300g+温泉卵 4個</li>
+      <li>→ 65℃/2.5時間。サーモンは1時間で先に引き上げ。主菜3種+副菜が一度に完成</li>
+    </ul>
+  </div>
+
+  <!-- 履歴 -->
+  <div id="historyPage" hidden>
+    <div class="panel">
+      <h3>調理履歴</h3>
+      <div id="histList"></div>
+    </div>
+  </div>
+
+  <!-- 運用 -->
+  <div id="opsPage" hidden>
+    <div class="ops-card">
+      <h3>生肉の扱い</h3>
+      <ul>
+        <li>生の鶏むねは<strong>冷蔵2〜3日</strong>まで。買った日か翌日に調理する</li>
+        <li>生肉・生魚は低温調理でも必ず別袋に分ける</li>
+      </ul>
+    </div>
+    <div class="ops-card">
+      <h3>調理済みの保存</h3>
+      <ul>
+        <li>調理済みは<strong>冷蔵3〜4日</strong>。汁ごと袋保存で乾燥を防ぐ</li>
+        <li>冷凍は1ヶ月OK(カレーはじゃがいもなしなら食感劣化なし)</li>
+      </ul>
+    </div>
+    <div class="ops-card">
+      <h3>週間サイクル</h3>
+      <ul>
+        <li>鶏むね1.5kg買い → 1kgは当日調理+500gは冷凍(1ヶ月OK)</li>
+        <li>冷凍分は週半ばに2回目の運転で消化</li>
+      </ul>
+      <div class="flow">週末1回+週半ば1回の運転 → 平日昼は「レンジで温めるだけ」</div>
+    </div>
+    <div class="ops-card">
+      <h3>器具まわり</h3>
+      <ul>
+        <li><span class="warn">内鍋のまま冷蔵はNG</span>。保存容器か袋に移す</li>
+        <li>カレーの後のパッキンは<span class="warn">早めに洗う</span>(匂い残り防止)</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="empty" id="empty">見つかりませんでした。別のキーワードで試してください</p>
+
+  <footer>KN-HW24H(2.4L・まぜ技ユニット)/ 低温調理は65℃固定運用</footer>
+</main>
+
+<script>
+// ============================================================
+// レシピデータ
+//   ing: n=表示名, shop=買い物リスト集計名(省略時はn), p=1で調味料ストック扱い
+//        t4/t2=人数別分量, t=人数によらず固定
+//   bags4/bags2: 低温調理の袋数(温泉卵は0=袋なし)
+// ============================================================
+const RECIPES = [
+  // ---------- ホットクック ----------
+  {
+    id: "curry", cat: "hotcook", catName: "ホットクック",
+    name: "スパイシーチキンカレー(無水カレー)",
+    desc: "無水メニューNo.001。約1時間放置で完成",
+    time: "約1時間", protein: true, keep: "冷蔵3〜4日・冷凍1ヶ月",
+    ing: [
+      { n: "鶏むね肉(そぎ切り)", shop: "鶏むね肉", t4: "1kg", t2: "500g" },
+      { n: "玉ねぎ", t4: "2個", t2: "1個" },
+      { n: "トマト缶", p: 1, t4: "1缶", t2: "1/2缶" },
+      { n: "カレー粉", p: 1, t4: "大さじ3", t2: "大さじ1.5" },
+      { n: "塩", p: 1, t4: "小さじ1.5〜2", t2: "小さじ3/4〜1" },
+      { n: "にんにくチューブ", p: 1, t4: "5cm", t2: "2〜3cm" }
+    ],
+    steps: [
+      "内鍋に玉ねぎ→鶏肉→トマト缶→調味料の順に入れる(順番が変わってもスタート前にひと混ぜすればOK)。水は入れない",
+      "まぜ技ユニットを装着",
+      "「メニューを選ぶ」→「カレー・シチュー」→ 無水カレー(No.001)→ スタート。約1時間"
+    ],
+    notes: [
+      "子供には辛い場合あり。カレー粉を減らして大人は後がけチリで調整",
+      "冷凍するならじゃがいもなしが食感劣化なしでおすすめ"
+    ]
+  },
+  {
+    id: "tandoori", cat: "hotcook", catName: "ホットクック",
+    name: "タンドリー風チキン",
+    desc: "袋で揉んで漬けるだけ。冷凍仕込みストック可",
+    time: "下味30分〜", protein: true, keep: "冷蔵3〜4日",
+    ing: [
+      { n: "鶏むね肉", t4: "600g", t2: "300g" },
+      { n: "ヨーグルト", t4: "大さじ4", t2: "大さじ2" },
+      { n: "カレー粉", p: 1, t4: "大さじ1.5", t2: "大さじ3/4" },
+      { n: "塩", p: 1, t4: "小さじ1", t2: "小さじ1/2" },
+      { n: "にんにく・しょうがチューブ", p: 1, t4: "各3cm", t2: "各1.5cm" }
+    ],
+    steps: [
+      "袋に材料をすべて入れて揉み、30分〜一晩漬ける",
+      "ホットクックで調理する"
+    ],
+    notes: ["漬けた状態で冷凍のまま仕込みストックにできる"]
+  },
+  {
+    id: "tebamoto", cat: "hotcook", catName: "ホットクック",
+    name: "手羽元のさっぱり煮",
+    desc: "煮込みメニューで放置。冷めても美味しい",
+    time: "煮込み放置", protein: true, keep: "冷蔵4日",
+    ing: [
+      { n: "手羽元", t4: "8本", t2: "4本" },
+      { n: "酢", p: 1, t4: "大さじ3", t2: "大さじ1.5" },
+      { n: "醤油", p: 1, t4: "大さじ3", t2: "大さじ1.5" },
+      { n: "砂糖", p: 1, t4: "大さじ1", t2: "大さじ1/2" },
+      { n: "にんにく", p: 1, t: "適量" }
+    ],
+    steps: [
+      "内鍋に材料をすべて入れる",
+      "煮込みメニューでスタートして放置"
+    ],
+    notes: ["冷めても美味しいので作り置き向き"]
+  },
+  {
+    id: "salt-soup", cat: "hotcook", catName: "ホットクック",
+    name: "鶏と野菜の塩スープ",
+    desc: "昼の味噌汁代わり。タンパク質+野菜が一度に",
+    time: "スープメニュー", protein: true, keep: "冷蔵3〜4日",
+    ing: [
+      { n: "鶏むね肉", t: "適量" },
+      { n: "キャベツ・きのこ等", t: "適量" },
+      { n: "塩", p: 1, t4: "小さじ1", t2: "小さじ1/2" },
+      { n: "コンソメ", p: 1, t4: "1個", t2: "1/2個" }
+    ],
+    steps: [
+      "内鍋に材料と水を入れてスープ系メニューでスタート"
+    ],
+    notes: ["昼の味噌汁代わり。タンパク質と野菜が一度に取れる"]
+  },
+  {
+    id: "teriyaki", cat: "hotcook", catName: "ホットクック",
+    name: "照り焼き風チキン",
+    desc: "甘辛・味濃いめで子供の鉄板",
+    time: "煮物メニュー", kids: true, protein: true, keep: "冷蔵3〜4日",
+    ing: [
+      { n: "鶏むね or もも肉", shop: "鶏むね(orもも)肉", t: "適量" },
+      { n: "醤油", p: 1, t4: "大さじ3", t2: "大さじ1.5" },
+      { n: "みりん", p: 1, t4: "大さじ3", t2: "大さじ1.5" },
+      { n: "砂糖", p: 1, t4: "大さじ1", t2: "大さじ1/2" }
+    ],
+    steps: [
+      "内鍋に材料をすべて入れる",
+      "煮物系メニューで調理"
+    ],
+    notes: ["甘辛味で子供の鉄板メニュー"]
+  },
+  // ---------- 低温調理 ----------
+  {
+    id: "consomme-chicken", cat: "lowtemp", catName: "低温調理",
+    name: "コンソメ醤油チキン",
+    desc: "定番の子供OK味。ブライン漬けでしっとり",
+    time: "65℃・2時間", kids: true, protein: true, keep: "冷蔵3〜4日",
+    bags4: 2, bags2: 1,
+    ing: [
+      { n: "鶏むね肉(300g/袋)", shop: "鶏むね肉", t4: "2枚(600g)", t2: "1枚(300g)" },
+      { n: "醤油", p: 1, t4: "大さじ2", t2: "大さじ1" },
+      { n: "みりん", p: 1, t4: "大さじ2", t2: "大さじ1" },
+      { n: "砂糖", p: 1, t4: "小さじ1", t2: "小さじ1/2" },
+      { n: "水", t4: "大さじ2", t2: "大さじ1" },
+      { n: "コンソメ", p: 1, t4: "1個", t2: "1/2個" },
+      { n: "にんにくチューブ", p: 1, t4: "2cm", t2: "1cm" },
+      { n: "玉ねぎ(すりおろし)", shop: "玉ねぎ", t4: "1/4個", t2: "1/8個" }
+    ],
+    steps: [
+      "玉ねぎをすりおろし、調味料・水と一緒に袋で揉んで30分〜一晩漬ける",
+      "水を張った内鍋に袋ごと沈め、65℃で2時間(複数袋なら2.5時間)",
+      "仕上げに袋の漬け汁を小鍋かレンジで軽く煮詰めるとタレに。スライス+温泉卵で丼にも"
+    ],
+    notes: [
+      "砂糖+水のブライン効果と玉ねぎの酵素でしっとり柔らか",
+      "食べる前に断面確認"
+    ]
+  },
+  {
+    id: "chicken-ham", cat: "lowtemp", catName: "低温調理",
+    name: "鶏ハム風",
+    desc: "砂糖の保水でしっとり仕上がる",
+    time: "65℃・2時間", kids: true, protein: true, keep: "冷蔵3〜4日",
+    bags4: 2, bags2: 1,
+    ing: [
+      { n: "鶏むね肉", t4: "2枚(600g)", t2: "1枚(300g)" },
+      { n: "塩", p: 1, t4: "小さじ1", t2: "小さじ1/2" },
+      { n: "砂糖", p: 1, t4: "小さじ2", t2: "小さじ1" },
+      { n: "黒こしょう", p: 1, t: "少々" }
+    ],
+    steps: [
+      "袋で揉んで漬ける",
+      "65℃で2時間(複数袋なら2.5時間)"
+    ],
+    notes: ["砂糖の保水効果でしっとり仕上がる"]
+  },
+  {
+    id: "shiokoji-chicken", cat: "lowtemp", catName: "低温調理",
+    name: "塩麹チキン",
+    desc: "塩麹のみの発酵仕込み。丸ごと調理→食べる時スライス",
+    time: "65℃・2時間", protein: true, keep: "冷蔵3〜4日",
+    bags4: 2, bags2: 1,
+    ing: [
+      { n: "鶏むね肉", t4: "2枚(600g)", t2: "1枚(300g)" },
+      { n: "塩麹", p: 1, t4: "大さじ3", t2: "大さじ1.5" }
+    ],
+    steps: [
+      "袋で揉んで一晩漬ける",
+      "65℃で2時間。丸ごと調理して食べる時にスライス"
+    ],
+    notes: ["発酵食品で肌にも◎"]
+  },
+  {
+    id: "magic-salt-chicken", cat: "lowtemp", catName: "低温調理",
+    name: "マジックソルトチキン",
+    desc: "ハーブサラダチキン風。マジックソルト+はちみつだけ",
+    time: "65℃・2時間", protein: true, keep: "冷蔵3〜4日",
+    bags4: 2, bags2: 1,
+    ing: [
+      { n: "鶏むね肉(300g/袋)", shop: "鶏むね肉", t4: "2枚(600g)", t2: "1枚(300g)" },
+      { n: "マジックソルト", p: 1, t4: "小さじ2", t2: "小さじ1" },
+      { n: "はちみつ", p: 1, t4: "小さじ2", t2: "小さじ1" },
+      { n: "水(または酒)", p: 1, t4: "大さじ2", t2: "大さじ1" }
+    ],
+    steps: [
+      "袋に材料をすべて入れて揉み、30分〜一晩漬ける",
+      "水を張った内鍋に袋ごと沈め、65℃で2時間(複数袋なら2.5時間)",
+      "スライスしてそのまま、サラダのせ、カレー粉ヨーグルトディップ添えにも"
+    ],
+    notes: [
+      "塩気の目安はマジックソルト小さじ1/300g(肉の約1%)。しっかり味なら1.5倍まで",
+      "ハーブの香りは子供の好みが分かれるので、初回は1袋だけ試すのが安全",
+      "はちみつは1歳未満の子はNG。その場合は砂糖に置き換え"
+    ]
+  },
+  {
+    id: "salmon-shiokoji", cat: "lowtemp", catName: "低温調理",
+    name: "サーモンの塩麹漬け",
+    desc: "鶏と同時調理OK。1時間で先に引き上げ",
+    time: "65℃・1時間", protein: true, keep: "冷蔵2〜3日",
+    bags4: 1, bags2: 1,
+    ing: [
+      { n: "サーモン切り身", t4: "4切れ", t2: "2切れ" },
+      { n: "塩麹", p: 1, t: "適量" }
+    ],
+    steps: [
+      "切り身に塩麹をまぶして袋に入れる(魚は必ず別袋)",
+      "鶏と同時調理OK。1時間で先に引き上げると柔らかさベスト"
+    ],
+    notes: []
+  },
+  {
+    id: "buri-teriyaki", cat: "lowtemp", catName: "低温調理",
+    name: "ぶりの照り漬け",
+    desc: "魚枠。DHA・ビタミンD補給",
+    time: "65℃・2時間", protein: true, keep: "冷蔵2〜3日",
+    bags4: 1, bags2: 1,
+    ing: [
+      { n: "ぶり切り身", t4: "4切れ", t2: "2切れ" },
+      { n: "醤油・みりん・砂糖", p: 1, t: "適量" }
+    ],
+    steps: [
+      "切り身と調味料を袋に入れて漬ける(魚は必ず別袋)",
+      "65℃で調理"
+    ],
+    notes: ["DHA・ビタミンDの補給枠"]
+  },
+  {
+    id: "pork-miso", cat: "lowtemp", catName: "低温調理",
+    name: "豚ロースの味噌漬け",
+    desc: "玉ねぎ×はちみつでしっとり柔らか。ビタミンB1補給",
+    time: "65℃・2.5時間", protein: true, keep: "冷蔵3〜4日",
+    bags4: 1, bags2: 1,
+    ing: [
+      { n: "豚ロース", t4: "300g", t2: "150g" },
+      { n: "味噌", p: 1, t4: "大さじ1.5", t2: "大さじ3/4" },
+      { n: "はちみつ", p: 1, t4: "小さじ2", t2: "小さじ1" },
+      { n: "みりん", p: 1, t4: "大さじ1", t2: "大さじ1/2" },
+      { n: "玉ねぎ(すりおろし)", shop: "玉ねぎ", t4: "1/4個", t2: "1/8個" },
+      { n: "にんにくチューブ(お好みで)", shop: "にんにくチューブ", p: 1, t4: "1cm", t2: "0.5cm" }
+    ],
+    steps: [
+      "玉ねぎをすりおろし、調味料と一緒に袋で揉んで30分〜一晩漬ける",
+      "65℃で2.5時間"
+    ],
+    notes: [
+      "玉ねぎの酵素で柔らかく。スライス玉ねぎは65℃では辛味が残るので「漬けダレ」として使う",
+      "はちみつは1歳未満の子はNG(低温調理では芽胞が死なないため)。その場合は砂糖小さじ2に置き換え",
+      "ビタミンB1が取れる豚枠"
+    ]
+  },
+  {
+    id: "salt-pork", cat: "lowtemp", catName: "低温調理",
+    name: "塩豚",
+    desc: "塩のみのシンプル仕込み。転用力が高い",
+    time: "65℃・2時間〜", protein: true, keep: "冷蔵3〜4日",
+    bags4: 1, bags2: 1,
+    ing: [
+      { n: "豚肩ロース", t4: "300g", t2: "150g" },
+      { n: "塩", p: 1, t: "適量" }
+    ],
+    steps: [
+      "塩をすり込んで袋に入れる",
+      "65℃で調理(袋数に応じて2〜2.5時間)"
+    ],
+    notes: ["スライスでそのまま、余りは炒め物・スープに転用"]
+  },
+  {
+    id: "carrot-glace", cat: "lowtemp", catName: "低温調理",
+    name: "にんじんのグラッセ風",
+    desc: "主菜のすき間に沈める副菜。薄切りがコツ",
+    time: "主菜と同時", kids: true, keep: "冷蔵3〜4日",
+    bags4: 1, bags2: 1,
+    ing: [
+      { n: "にんじん", t4: "2本(約300g)", t2: "1本" },
+      { n: "バター", p: 1, t4: "10g", t2: "5g" },
+      { n: "砂糖", p: 1, t4: "小さじ2", t2: "小さじ1" },
+      { n: "塩", p: 1, t: "ひとつまみ" }
+    ],
+    steps: [
+      "にんじんは皮をむいて5〜7mmの輪切りにする(65℃は火の通りが穏やかなので薄めに)",
+      "袋にバター・砂糖・塩と一緒に入れ、空気を抜いて主菜の袋と一緒に沈める",
+      "終わったら袋の中で軽く揉んでバターを絡める"
+    ],
+    notes: ["シャキッと感が残る仕上がり。柔らかくしたい場合は袋の口を開けてレンジ600Wで1〜2分追加"]
+  },
+  {
+    id: "sweetpotato-butter", cat: "lowtemp", catName: "低温調理",
+    name: "さつまいもバター",
+    desc: "主菜のすき間に沈める副菜。おやつにも",
+    time: "主菜と同時", kids: true, keep: "冷蔵3〜4日",
+    bags4: 1, bags2: 1,
+    ing: [
+      { n: "さつまいも", t4: "1本(約250g)", t2: "小1本" },
+      { n: "バター", p: 1, t4: "10g", t2: "5g" }
+    ],
+    steps: [
+      "さつまいもは1.5cm厚の輪切りにして水に3分さらす",
+      "水気を拭いてバターと袋に入れ、主菜の袋と一緒に沈める"
+    ],
+    notes: ["固さが残ったらレンジ600Wで1〜2分追加でホクホクに"]
+  },
+  {
+    id: "onsen-egg", cat: "lowtemp", catName: "低温調理",
+    name: "温泉卵",
+    desc: "殻のまま水に直接沈めるだけ。袋不要",
+    time: "65〜68℃", kids: true, protein: true, keep: "冷蔵2〜3日",
+    bags4: 0, bags2: 0,
+    ing: [
+      { n: "卵", t4: "4個", t2: "2個" }
+    ],
+    steps: [
+      "殻のまま水に直接沈める(袋不要)",
+      "主菜と混載なら2〜2.5時間沈めっぱなしでOK",
+      "終わったら冷水にとって余熱で固まりすぎるのを防ぐ"
+    ],
+    notes: ["卵だけ欲しい日は65〜68℃・35〜40分の単独運転(冷蔵庫から出したてなら40分寄り)"]
+  },
+  // ---------- 朝食 ----------
+  {
+    id: "yogurt", cat: "breakfast", catName: "朝食",
+    name: "基本の朝ヨーグルト",
+    desc: "用意1〜2分。前夜にベリーを混ぜて半解凍ソース",
+    time: "1〜2分", kids: true, protein: true, noScale: true,
+    ing: [
+      { n: "ギリシャヨーグルト(または水切り)", shop: "ギリシャヨーグルト", t: "1食分" },
+      { n: "はちみつ", p: 1, t: "小さじ1〜2" },
+      { n: "冷凍ベリー or バナナ", t: "適量" },
+      { n: "ナッツ", p: 1, t: "ひとつかみ" },
+      { n: "水", t: "500ml" }
+    ],
+    steps: [
+      "冷凍ベリーは前夜にヨーグルトへ混ぜて冷蔵 → 朝は半解凍ソース状",
+      "朝ははちみつ・ナッツをのせるだけ"
+    ],
+    notes: ["時間がない日ははちみつだけでも可"]
+  },
+  {
+    id: "overnight-oats", cat: "breakfast", catName: "朝食",
+    name: "オーバーナイトオーツ",
+    desc: "夜に混ぜて冷蔵→朝そのまま。腹持ち強化版",
+    time: "夜仕込み", kids: true, noScale: true,
+    ing: [
+      { n: "ヨーグルト", t: "1食分" },
+      { n: "牛乳", t: "適量" },
+      { n: "オートミール", p: 1, t: "適量" },
+      { n: "はちみつ", p: 1, t: "適量" },
+      { n: "ベリー(トッピング)", shop: "冷凍ベリー", t: "適量" }
+    ],
+    steps: [
+      "夜にヨーグルト+牛乳+オートミール+はちみつを混ぜて冷蔵",
+      "朝そのまま食べる。ベリーをトッピング"
+    ],
+    notes: ["朝ヨーグルトの腹持ち強化版"]
+  },
+  {
+    id: "curry-dip", cat: "breakfast", catName: "朝食",
+    name: "カレー粉ヨーグルトディップ",
+    desc: "サラダチキンのソース兼タンドリー下味",
+    time: "混ぜるだけ", noScale: true,
+    ing: [
+      { n: "ヨーグルト", t: "適量" },
+      { n: "カレー粉", p: 1, t: "適量" },
+      { n: "塩", p: 1, t: "少々" }
+    ],
+    steps: [
+      "すべて混ぜるだけ"
+    ],
+    notes: ["サラダチキンのソースにも、タンドリー風チキンの下味にも使える"]
+  }
+];
+
+const byId = {};
+RECIPES.forEach(r => { byId[r.id] = r; });
+
+// ============================================================
+// 状態(献立・買い物チェック・履歴)
+//   claude.ai上: data/state.json をページ自身が保存 → 家族全員に同期
+//   ローカルファイル: localStorage に保存(この端末のみ)
+// ============================================================
+const STATE_FILE = "data/state.json";
+const LS_KEY = "recipe-app-state";
+const DEFAULT_STATE = {
+  menu: {
+    date: "2026-08-30",
+    recipeIds: ["consomme-chicken", "carrot-glace", "pork-miso"],
+    servings: 4,
+    checked: []
+  },
+  history: []
+};
+
+let state = JSON.parse(JSON.stringify(DEFAULT_STATE));
+let artifactNs = null;       // claude.use("artifact") の結果
+let sharedUnavailable = false;
+let syncMode = "";           // "shared" | "local" | ""
+let saveTimer = null;
+let activeTab = "menu";
+
+function normalizeState(s) {
+  if (!s || typeof s !== "object") return JSON.parse(JSON.stringify(DEFAULT_STATE));
+  if (!s.menu || typeof s.menu !== "object") s.menu = JSON.parse(JSON.stringify(DEFAULT_STATE.menu));
+  s.menu.recipeIds = (s.menu.recipeIds || []).filter(id => byId[id]);
+  s.menu.checked = s.menu.checked || [];
+  s.menu.servings = s.menu.servings === 2 ? 2 : 4;
+  if (!Array.isArray(s.history)) s.history = [];
+  return s;
+}
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(doSave, 1200);
+}
+
+async function doSave() {
+  const json = JSON.stringify(state);
+  if (artifactNs && !sharedUnavailable) {
+    try {
+      await artifactNs.publish({ [STATE_FILE]: { content: json, contentType: "application/json" } });
+      syncMode = "shared";
+      renderSyncChip();
+      return;
+    } catch (e) {
+      const code = e && e.code;
+      if (code === "conflict") return;            // 他の端末が先に保存 → 自動リロードされる
+      if (code === "rate_limited") { setTimeout(doSave, 5000); return; }
+      if (code === "upstream_error") { setTimeout(doSave, 3000 + Math.random() * 2000); sharedUnavailable = false; }
+      else sharedUnavailable = true;               // 読み取り専用など → ローカル保存へ
+    }
+  }
+  try { localStorage.setItem(LS_KEY, json); syncMode = "local"; } catch (e) {}
+  renderSyncChip();
+}
+
+async function loadState() {
+  // 1) 共有状態ファイル(claude.ai上で家族と共有)
+  try {
+    const res = await fetch(STATE_FILE, { cache: "no-store" });
+    if (res.ok) {
+      state = normalizeState(await res.json());
+      syncMode = "shared";
+      return;
+    }
+  } catch (e) {}
+  // 2) この端末のlocalStorage
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      state = normalizeState(JSON.parse(raw));
+      syncMode = "local";
+      return;
+    }
+  } catch (e) {}
+  // 3) 初期状態
+  state = normalizeState(JSON.parse(JSON.stringify(DEFAULT_STATE)));
+}
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function kataToHira(s) {
+  return s.replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+}
+const WDAY = ["日", "月", "火", "水", "木", "金", "土"];
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function fmtDate(iso) {
+  const p = (iso || "").split("-");
+  if (p.length !== 3) return iso || "";
+  const d = new Date(+p[0], +p[1] - 1, +p[2]);
+  return (+p[1]) + "月" + (+p[2]) + "日(" + WDAY[d.getDay()] + ")";
+}
+
+// ============================================================
+// レシピカード生成(初回のみ)
+// ============================================================
+const cardsEl = document.getElementById("cards");
+
+RECIPES.forEach(r => {
+  const d = document.createElement("details");
+  d.className = "card";
+  d.dataset.cat = r.cat;
+  d.dataset.id = r.id;
+  d.dataset.search = kataToHira((r.name + " " + r.desc + " " +
+    r.ing.map(x => x.n).join(" ") + " " +
+    (r.notes || []).join(" ")).toLowerCase());
+
+  const badges = [];
+  if (r.time) badges.push('<span class="badge b-time">' + esc(r.time) + "</span>");
+  if (r.kids) badges.push('<span class="badge b-kids">子供OK</span>');
+  if (r.protein) badges.push('<span class="badge b-protein">高タンパク</span>');
+  if (r.keep) badges.push('<span class="badge b-keep">' + esc(r.keep) + "</span>");
+  badges.push('<span class="badge b-last" data-last hidden></span>');
+
+  const ingRows = r.ing.map(x => {
+    let amt;
+    if (x.t !== undefined) {
+      amt = '<td class="amt">' + esc(x.t) + "</td>";
+    } else {
+      amt = '<td class="amt" data-t4="' + esc(x.t4) + '" data-t2="' + esc(x.t2) + '">' + esc(x.t4) + "</td>";
+    }
+    return "<tr><td>" + esc(x.n) + "</td>" + amt + "</tr>";
+  }).join("");
+
+  const servTag = r.noScale ? "1人分目安" : '<span class="serv-now">4人前</span>';
+
+  d.innerHTML =
+    "<summary>" +
+      '<div class="card-top"><div>' +
+        '<div class="card-name">' + esc(r.name) + "</div>" +
+        '<div class="card-desc">' + esc(r.desc) + "</div>" +
+        '<span class="card-cat">' + esc(r.catName) + "</span>" +
+      "</div>" +
+      '<button type="button" class="add-btn" data-add="' + r.id + '">+ 献立</button>' +
+      "</div>" +
+      '<div class="badges">' + badges.join("") + "</div>" +
+    "</summary>" +
+    '<div class="card-body">' +
+      '<div class="sec-label">材料<span class="serv-tag">' + servTag + "</span></div>" +
+      '<table class="ing">' + ingRows + "</table>" +
+      '<div class="sec-label">手順</div>' +
+      '<ol class="steps">' + r.steps.map(s => "<li>" + esc(s) + "</li>").join("") + "</ol>" +
+      ((r.notes && r.notes.length)
+        ? '<div class="sec-label">メモ</div><ul class="notes">' + r.notes.map(s => "<li>" + esc(s) + "</li>").join("") + "</ul>"
+        : "") +
+    "</div>";
+  cardsEl.appendChild(d);
+});
+
+// 「+献立」ボタン(summary内なのでクリックの開閉を止める)
+cardsEl.addEventListener("click", e => {
+  const btn = e.target.closest("[data-add]");
+  if (!btn) return;
+  e.preventDefault();
+  toggleMenuItem(btn.dataset.add);
+});
+
+// ============================================================
+// 人数切り替え
+// ============================================================
+const btn2 = document.getElementById("serv2");
+const btn4 = document.getElementById("serv4");
+function applyServings(save) {
+  const n = state.menu.servings;
+  btn2.classList.toggle("on", n === 2);
+  btn4.classList.toggle("on", n === 4);
+  document.querySelectorAll(".amt[data-t4]").forEach(td => {
+    td.textContent = n === 2 ? td.dataset.t2 : td.dataset.t4;
+  });
+  document.querySelectorAll(".serv-now").forEach(el => { el.textContent = n + "人前"; });
+  renderMenu();
+  if (save) scheduleSave();
+}
+btn2.addEventListener("click", () => { state.menu.servings = 2; applyServings(true); });
+btn4.addEventListener("click", () => { state.menu.servings = 4; applyServings(true); });
+
+// ============================================================
+// 献立・買い物リスト
+// ============================================================
+function toggleMenuItem(id) {
+  const ids = state.menu.recipeIds;
+  const i = ids.indexOf(id);
+  if (i >= 0) ids.splice(i, 1);
+  else {
+    ids.push(id);
+    state.menu.date = todayStr();
+  }
+  state.menu.checked = state.menu.checked.filter(k => buildShopping().some(g => g.items.some(it => it.key === k)));
+  renderMenu();
+  scheduleSave();
+}
+
+function buildShopping() {
+  const n = state.menu.servings;
+  const fresh = new Map(), pantry = new Map();
+  state.menu.recipeIds.forEach(id => {
+    const r = byId[id];
+    r.ing.forEach(x => {
+      if (x.n === "水") return;
+      const key = x.shop || x.n;
+      const amt = x.t !== undefined ? x.t : (n === 2 ? x.t2 : x.t4);
+      const map = x.p ? pantry : fresh;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push({ amt, recipe: r.name });
+    });
+  });
+  const toItems = map => [...map.entries()].map(([key, lines]) => ({ key, lines }));
+  return [
+    { name: "買うもの", items: toItems(fresh) },
+    { name: "ストック確認(調味料など)", items: toItems(pantry) }
+  ];
+}
+
+function bagHint() {
+  const low = state.menu.recipeIds.map(id => byId[id]).filter(r => r.cat === "lowtemp");
+  if (!low.length) return "";
+  const n = state.menu.servings;
+  const bags = low.reduce((s, r) => s + (n === 2 ? (r.bags2 || 0) : (r.bags4 || 0)), 0);
+  const hasEgg = low.some(r => r.id === "onsen-egg");
+  const hasSalmon = low.some(r => r.id === "salmon-shiokoji");
+  const time = bags >= 2 ? "2.5時間" : "2時間";
+  let t = "低温調理: 袋" + bags + "個" + (hasEgg ? "+卵(直接)" : "") +
+          " → <strong>65℃・" + time + "</strong>で1運転";
+  if (hasSalmon) t += "。サーモンは1時間で先に引き上げ";
+  const hot = state.menu.recipeIds.map(id => byId[id]).filter(r => r.cat === "hotcook");
+  if (hot.length) t += "<br>ホットクック側: " + hot.map(r => esc(r.name)).join("、") + " は別運転";
+  return t;
+}
+
+function renderMenu() {
+  const ids = state.menu.recipeIds;
+  document.getElementById("menuCnt").textContent = ids.length || "";
+  document.getElementById("menuDate").textContent = ids.length ? fmtDate(state.menu.date) : "";
+
+  // カードの「+献立」ボタン状態
+  document.querySelectorAll("[data-add]").forEach(b => {
+    const inMenu = ids.includes(b.dataset.add);
+    b.classList.toggle("in", inMenu);
+    b.textContent = inMenu ? "✓ 献立" : "+ 献立";
+  });
+
+  // 献立リスト
+  const listEl = document.getElementById("menuList");
+  if (!ids.length) {
+    listEl.innerHTML = '<p class="menu-empty">各レシピカードの「+ 献立」ボタンから今日作るものを追加してください</p>';
+  } else {
+    listEl.innerHTML = ids.map(id => {
+      const r = byId[id];
+      return '<div class="menu-item"><span><span class="m-cat">' + esc(r.catName) + "</span>" + esc(r.name) + "</span>" +
+        '<button type="button" class="rm-btn" data-rm="' + id + '" aria-label="' + esc(r.name) + 'を外す">✕</button></div>';
+    }).join("");
+  }
+
+  // 運転メモ
+  const hint = bagHint();
+  const hintEl = document.getElementById("runHint");
+  hintEl.hidden = !hint;
+  hintEl.innerHTML = hint;
+
+  // 買い物リスト
+  const shopPanel = document.getElementById("shopPanel");
+  shopPanel.hidden = !ids.length;
+  document.getElementById("menuBtns").hidden = !ids.length;
+  if (ids.length) {
+    document.getElementById("shopServ").textContent = state.menu.servings + "人前ベース";
+    document.getElementById("shopList").innerHTML = buildShopping().filter(g => g.items.length).map(g =>
+      '<div class="shop-group"><div class="shop-group-name">' + esc(g.name) + "</div>" +
+      g.items.map(it => {
+        const done = state.menu.checked.includes(it.key);
+        const amts = it.lines.map(l =>
+          esc(l.amt) + (it.lines.length > 1 ? "(" + esc(l.recipe) + ")" : "")).join("、");
+        return '<label class="shop-item' + (done ? " done" : "") + '">' +
+          '<input type="checkbox" data-check="' + esc(it.key) + '"' + (done ? " checked" : "") + ">" +
+          '<span><span class="s-name">' + esc(it.key) + '</span><br><span class="s-amt">' + amts + "</span></span></label>";
+      }).join("") + "</div>"
+    ).join("");
+  }
+}
+
+document.getElementById("menuPage").addEventListener("click", e => {
+  const rm = e.target.closest("[data-rm]");
+  if (rm) { toggleMenuItem(rm.dataset.rm); return; }
+});
+document.getElementById("menuPage").addEventListener("change", e => {
+  const cb = e.target.closest("[data-check]");
+  if (!cb) return;
+  const key = cb.dataset.check;
+  const arr = state.menu.checked;
+  const i = arr.indexOf(key);
+  if (cb.checked && i < 0) arr.push(key);
+  if (!cb.checked && i >= 0) arr.splice(i, 1);
+  cb.closest(".shop-item").classList.toggle("done", cb.checked);
+  scheduleSave();
+});
+
+// 作った!を記録
+document.getElementById("recordBtn").addEventListener("click", () => {
+  if (!state.menu.recipeIds.length) return;
+  const names = state.menu.recipeIds.map(id => byId[id].name);
+  state.history.push({ date: todayStr(), recipeIds: [...state.menu.recipeIds] });
+  state.menu.recipeIds = [];
+  state.menu.checked = [];
+  renderMenu();
+  renderHistory();
+  scheduleSave();
+  const f = document.getElementById("flash");
+  f.textContent = fmtDate(todayStr()) + " に記録しました: " + names.join("、");
+  f.style.display = "block";
+  setTimeout(() => { f.style.display = "none"; }, 5000);
+});
+document.getElementById("clearBtn").addEventListener("click", () => {
+  state.menu.recipeIds = [];
+  state.menu.checked = [];
+  renderMenu();
+  scheduleSave();
+});
+
+function renderSyncChip() {
+  const el = document.getElementById("syncChip");
+  if (syncMode === "shared") el.textContent = "✓ 家族と同期中(このページを開く全員に反映されます)";
+  else if (syncMode === "local") el.textContent = "献立チェック・履歴はこの端末に保存されます(端末ごとに独立)";
+  else el.textContent = "";
+}
+
+// ============================================================
+// 履歴
+// ============================================================
+function renderHistory() {
+  const el = document.getElementById("histList");
+  if (!state.history.length) {
+    el.innerHTML = '<p class="menu-empty">まだ記録がありません。献立タブの「作った!を履歴に記録」で残せます</p>';
+  } else {
+    const sorted = state.history.map((h, i) => ({ ...h, _i: i }))
+      .sort((a, b) => b.date.localeCompare(a.date) || b._i - a._i);
+    el.innerHTML = sorted.map(h =>
+      '<div class="hist-item">' +
+        '<span class="hist-date">' + esc(fmtDate(h.date)) + "</span>" +
+        '<span class="hist-recipes">' + h.recipeIds.map(id => esc(byId[id] ? byId[id].name : id)).join("、") + "</span>" +
+        '<button type="button" class="rm-btn" data-del-hist="' + h._i + '" aria-label="この記録を削除">✕</button>' +
+      "</div>"
+    ).join("");
+  }
+  // カードの「前回」バッジ
+  const last = {};
+  state.history.forEach(h => {
+    h.recipeIds.forEach(id => {
+      if (!last[id] || h.date > last[id]) last[id] = h.date;
+    });
+  });
+  document.querySelectorAll("details.card").forEach(d => {
+    const b = d.querySelector("[data-last]");
+    const dt = last[d.dataset.id];
+    b.hidden = !dt;
+    if (dt) b.textContent = "前回: " + fmtDate(dt);
+  });
+}
+document.getElementById("historyPage").addEventListener("click", e => {
+  const del = e.target.closest("[data-del-hist]");
+  if (!del) return;
+  state.history.splice(+del.dataset.delHist, 1);
+  renderHistory();
+  scheduleSave();
+});
+
+// ============================================================
+// タブ・検索・表示
+// ============================================================
+const tabsEl = document.getElementById("tabs");
+const searchEl = document.getElementById("search");
+const searchWrap = document.getElementById("searchWrap");
+const emptyEl = document.getElementById("empty");
+
+tabsEl.addEventListener("click", e => {
+  const btn = e.target.closest("button[data-tab]");
+  if (!btn) return;
+  activeTab = btn.dataset.tab;
+  tabsEl.querySelectorAll("button").forEach(b => b.classList.toggle("on", b === btn));
+  if (searchEl.value.trim()) {
+    searchEl.value = "";
+    searchWrap.classList.remove("has-text");
+  }
+  render();
+});
+
+searchEl.addEventListener("input", () => {
+  searchWrap.classList.toggle("has-text", searchEl.value.trim() !== "");
+  render();
+});
+document.getElementById("searchClear").addEventListener("click", () => {
+  searchEl.value = "";
+  searchWrap.classList.remove("has-text");
+  searchEl.focus();
+  render();
+});
+
+function render() {
+  const q = kataToHira(searchEl.value.trim().toLowerCase());
+  const searching = q !== "";
+  document.body.classList.toggle("searching", searching);
+  tabsEl.classList.toggle("dim", searching);
+
+  document.getElementById("menuPage").hidden = searching || activeTab !== "menu";
+  document.getElementById("historyPage").hidden = searching || activeTab !== "history";
+  document.getElementById("opsPage").hidden = searching || activeTab !== "ops";
+  document.getElementById("lowtempInfo").hidden = searching || activeTab !== "lowtemp";
+  document.getElementById("mixExample").hidden = searching || activeTab !== "lowtemp";
+
+  const recipeTab = ["hotcook", "lowtemp", "breakfast"].includes(activeTab);
+  let visible = 0;
+  document.querySelectorAll("details.card").forEach(d => {
+    let show;
+    if (searching) show = q.split(/\s+/).every(w => d.dataset.search.includes(w));
+    else show = recipeTab && activeTab === d.dataset.cat;
+    d.style.display = show ? "" : "none";
+    if (show) visible++;
+  });
+  emptyEl.style.display = (visible === 0 && (searching || recipeTab)) ? "block" : "none";
+}
+
+// ============================================================
+// 起動
+// ============================================================
+(async () => {
+  await loadState();
+  applyServings(false);
+  renderMenu();
+  renderHistory();
+  renderSyncChip();
+  render();
+  // 共有保存機能(claude.ai上でのみ有効。なければローカル保存のまま)
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("artifact").then(ns => { artifactNs = ns; }).catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
