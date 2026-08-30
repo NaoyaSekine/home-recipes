@@ -456,10 +456,31 @@
   ul.tokubai-items li .t-price { color: var(--accent-deep); font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .tokubai-note { font-size: 12px; color: var(--muted); margin-top: 3px; }
 
+  .card-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .cooked-btn {
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 99px;
+    border: 1.5px solid var(--accent);
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    cursor: pointer;
+  }
+  .cooked-btn.done {
+    background: var(--accent);
+    color: #fff;
+  }
   .card-dates {
     font-size: 11px;
     color: var(--muted);
-    margin-top: 12px;
     text-align: right;
   }
 
@@ -1008,6 +1029,7 @@ let artifactNs = null;       // claude.use("artifact") の結果
 let sharedUnavailable = false;
 let syncMode = "";           // "shared" | "local" | ""
 let saveTimer = null;
+let saveRetries = 0;         // upstream_error連続リトライの上限管理
 let activeTab = "menu";
 
 function normalizeState(s) {
@@ -1031,14 +1053,16 @@ async function doSave() {
     try {
       await artifactNs.publish({ [STATE_FILE]: { content: json, contentType: "application/json" } });
       syncMode = "shared";
+      saveRetries = 0;
       renderSyncChip();
       return;
     } catch (e) {
       const code = e && e.code;
       if (code === "conflict") return;            // 他の端末が先に保存 → 自動リロードされる
-      if (code === "rate_limited") { setTimeout(doSave, 5000); return; }
-      if (code === "upstream_error") { setTimeout(doSave, 3000 + Math.random() * 2000); sharedUnavailable = false; }
-      else sharedUnavailable = true;               // 読み取り専用など → ローカル保存へ
+      if ((code === "rate_limited" || code === "upstream_error") && saveRetries < 3) {
+        saveRetries++;
+        setTimeout(doSave, 4000 + Math.random() * 2000);
+      } else sharedUnavailable = true;             // 読み取り専用・リトライ上限 → ローカル保存へ
     }
   }
   try { localStorage.setItem(LS_KEY, json); syncMode = "local"; } catch (e) {}
@@ -1148,18 +1172,34 @@ RECIPES.forEach(r => {
       ((r.notes && r.notes.length)
         ? '<div class="sec-label">メモ</div><ul class="notes">' + r.notes.map(s => "<li>" + esc(s) + "</li>").join("") + "</ul>"
         : "") +
-      '<div class="card-dates">登録: ' + esc(fmtDateY(r.added || RECIPE_EPOCH)) +
-        (r.updated ? " ・ 改良: " + esc(fmtDateY(r.updated)) : "") + "</div>" +
+      '<div class="card-foot">' +
+        '<button type="button" class="cooked-btn" data-cooked="' + r.id + '">今日作った</button>' +
+        '<div class="card-dates">登録: ' + esc(fmtDateY(r.added || RECIPE_EPOCH)) +
+          (r.updated ? " ・ 改良: " + esc(fmtDateY(r.updated)) : "") + "</div>" +
+      "</div>" +
     "</div>";
   cardsEl.appendChild(d);
 });
 
-// 「+献立」ボタン(summary内なのでクリックの開閉を止める)
+// 「+献立」ボタン(summary内なのでクリックの開閉を止める)と「今日作った」ボタン
 cardsEl.addEventListener("click", e => {
-  const btn = e.target.closest("[data-add]");
-  if (!btn) return;
-  e.preventDefault();
-  toggleMenuItem(btn.dataset.add);
+  const addBtn = e.target.closest("[data-add]");
+  if (addBtn) {
+    e.preventDefault();
+    toggleMenuItem(addBtn.dataset.add);
+    return;
+  }
+  const cookedBtn = e.target.closest("[data-cooked]");
+  if (cookedBtn) {
+    const id = cookedBtn.dataset.cooked;
+    const today = todayStr();
+    const already = state.history.some(h => h.date === today && h.recipeIds.includes(id));
+    if (!already) {
+      state.history.push({ date: today, recipeIds: [id] });
+      renderHistory();
+      scheduleSave();
+    }
+  }
 });
 
 // ============================================================
@@ -1347,18 +1387,27 @@ function renderHistory() {
       "</div>"
     ).join("");
   }
-  // カードの「前回」バッジ
-  const last = {};
+  // カードの「前回」バッジと「今日作った」ボタン状態
+  const last = {}, count = {};
   state.history.forEach(h => {
     h.recipeIds.forEach(id => {
       if (!last[id] || h.date > last[id]) last[id] = h.date;
+      count[id] = (count[id] || 0) + 1;
     });
   });
+  const today = todayStr();
   document.querySelectorAll("details.card").forEach(d => {
+    const id = d.dataset.id;
     const b = d.querySelector("[data-last]");
-    const dt = last[d.dataset.id];
+    const dt = last[id];
     b.hidden = !dt;
-    if (dt) b.textContent = "前回: " + fmtDate(dt);
+    if (dt) b.textContent = "前回: " + fmtDate(dt) + (count[id] > 1 ? "・計" + count[id] + "回" : "");
+    const cb = d.querySelector("[data-cooked]");
+    if (cb) {
+      const doneToday = dt === today;
+      cb.classList.toggle("done", doneToday);
+      cb.textContent = doneToday ? "✓ 今日記録済み" : "今日作った";
+    }
   });
 }
 // ============================================================
