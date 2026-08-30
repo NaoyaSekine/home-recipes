@@ -513,6 +513,20 @@
   ul.tokubai-items li { display: flex; justify-content: space-between; gap: 10px; padding: 1.5px 0; }
   ul.tokubai-items li .t-price { color: var(--accent-deep); font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .tokubai-note { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .t-link { font-size: 12px; color: var(--accent); font-weight: 600; margin-left: 8px; white-space: nowrap; }
+
+  .flyer-links { display: flex; flex-wrap: wrap; gap: 8px; }
+  .flyer-links a {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+    border-radius: 99px;
+    padding: 7px 14px;
+    text-decoration: none;
+  }
+  .flyer-links a span { color: var(--muted); font-weight: 500; font-size: 11px; margin-left: 4px; }
 
   .card-foot {
     display: flex;
@@ -622,6 +636,14 @@
     <div class="btn-row" id="menuBtns" hidden>
       <button type="button" class="btn btn-primary" id="recordBtn">作った!を履歴に記録</button>
       <button type="button" class="btn btn-ghost" id="clearBtn">クリア</button>
+    </div>
+    <div class="panel">
+      <h3>今週のチラシ</h3>
+      <div class="flyer-links">
+        <a href="https://tokubai.co.jp/%E3%82%BF%E3%82%A4%E3%83%A8%E3%83%BC/173305" target="_blank" rel="noopener">ビッグハウスみどりの<span>月曜まとめ買い</span></a>
+        <a href="https://tokubai.co.jp/%E3%82%AB%E3%82%B9%E3%83%9F/8217" target="_blank" rel="noopener">カスミ みどりの駅前<span>金曜夕方</span></a>
+        <a href="https://tokubai.co.jp/%E3%83%AD%E3%83%94%E3%82%A2/367243" target="_blank" rel="noopener">ロピア みらい平<span>精肉が強い</span></a>
+      </div>
     </div>
     <p class="sync-chip" id="syncChip"></p>
   </div>
@@ -1592,6 +1614,14 @@ setInterval(refreshFromCloud, 60000);
 // ============================================================
 // 特売メモ(data/tokubai-log.json を定期タスクが更新)
 // ============================================================
+const STORE_LINKS = {
+  "ビッグハウスみどりの店": "https://tokubai.co.jp/%E3%82%BF%E3%82%A4%E3%83%A8%E3%83%BC/173305",
+  "カスミ みどりの駅前店": "https://tokubai.co.jp/%E3%82%AB%E3%82%B9%E3%83%9F/8217",
+  "ロピア みらい平店": "https://tokubai.co.jp/%E3%83%AD%E3%83%94%E3%82%A2/367243"
+};
+function safeUrl(u) {
+  return typeof u === "string" && /^https:\/\//.test(u) ? u : null;
+}
 async function loadTokubai() {
   let log = null;
   try {
@@ -1605,10 +1635,12 @@ async function loadTokubai() {
   entries.sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
   document.getElementById("tokubaiList").innerHTML = entries.map(t => {
     const items = Array.isArray(t.items) ? t.items.filter(x => x && x.n) : [];
+    const link = safeUrl(t.url) || STORE_LINKS[t.store] || null;
     return '<div class="tokubai-entry">' +
       '<div class="tokubai-head"><span class="hist-date">' + esc(fmtDate(String(t.date || ""))) + "</span> " +
         '<span class="t-store">' + esc(String(t.store || "")) + "</span>" +
-        (t.period ? '<span class="t-period">' + esc(String(t.period)) + "</span>" : "") + "</div>" +
+        (t.period ? '<span class="t-period">' + esc(String(t.period)) + "</span>" : "") +
+        (link ? '<a class="t-link" href="' + esc(link) + '" target="_blank" rel="noopener">チラシを見る↗</a>' : "") + "</div>" +
       (items.length
         ? '<ul class="tokubai-items">' + items.map(x =>
             "<li><span>" + esc(String(x.n)) + '</span><span class="t-price">' + esc(String(x.p || "")) + "</span></li>").join("") + "</ul>"
