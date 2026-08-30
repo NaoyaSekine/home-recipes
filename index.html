@@ -445,6 +445,64 @@
   .hist-date { font-weight: 700; font-size: 14px; color: var(--accent-deep); white-space: nowrap; }
   .hist-recipes { font-size: 13.5px; flex: 1; }
 
+  /* ---------- カレンダー ---------- */
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .cal-title { font-weight: 700; font-size: 14.5px; color: var(--accent-deep); }
+  .cal-nav {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--muted);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-dow { text-align: center; font-size: 10px; color: var(--muted); font-weight: 600; padding: 2px 0; }
+  .cal-day {
+    min-height: 44px;
+    border-radius: 9px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .cal-day.has { background: var(--accent-soft); }
+  .cal-day.today .d-num { font-weight: 800; color: var(--accent-deep); text-decoration: underline; }
+  .cal-day.sel { border-color: var(--accent); }
+  .cal-day.future { opacity: 0.35; pointer-events: none; }
+  .d-num { font-size: 12.5px; }
+  .cal-dots { display: flex; gap: 2.5px; min-height: 5px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .dd-date { font-weight: 700; color: var(--accent-deep); margin: 14px 0 2px; font-size: 14px; }
+  .dd-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14.5px;
+  }
+  .dd-add { display: flex; gap: 8px; margin-top: 10px; }
+  .dd-add select {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    font-size: 14px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .dd-add .btn { padding: 8px 16px; font-size: 13.5px; flex-shrink: 0; }
+
   /* ---------- 特売メモ ---------- */
   .tokubai-entry { padding: 9px 0; border-bottom: 1px solid var(--line); }
   .tokubai-entry:last-child { border-bottom: none; }
@@ -592,8 +650,14 @@
   <!-- 履歴 -->
   <div id="historyPage" hidden>
     <div class="panel">
-      <h3>調理履歴</h3>
-      <div id="histList"></div>
+      <h3>調理履歴 <span class="sub">日付をタップで詳細・追加</span></h3>
+      <div class="cal-head">
+        <button type="button" class="cal-nav" id="calPrev" aria-label="前の月">‹</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button type="button" class="cal-nav" id="calNext" aria-label="次の月">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div id="dayDetail"></div>
     </div>
     <div class="panel" id="tokubaiPanel" hidden>
       <h3>特売メモ <span class="sub">毎週のチラシから自動記録</span></h3>
@@ -1408,21 +1472,79 @@ function renderSyncChip() {
 // ============================================================
 // 履歴
 // ============================================================
-function renderHistory() {
-  const el = document.getElementById("histList");
-  if (!state.history.length) {
-    el.innerHTML = '<p class="menu-empty">まだ記録がありません。献立タブの「作った!を履歴に記録」で残せます</p>';
-  } else {
-    const sorted = state.history.map((h, i) => ({ ...h, _i: i }))
-      .sort((a, b) => b.date.localeCompare(a.date) || b._i - a._i);
-    el.innerHTML = sorted.map(h =>
-      '<div class="hist-item">' +
-        '<span class="hist-date">' + esc(fmtDate(h.date)) + "</span>" +
-        '<span class="hist-recipes">' + h.recipeIds.map(id => esc(byId[id] ? byId[id].name : id)).join("、") + "</span>" +
-        '<button type="button" class="rm-btn" data-del-hist="' + h._i + '" aria-label="この記録を削除">✕</button>' +
-      "</div>"
-    ).join("");
+const _now = new Date();
+let calYear = _now.getFullYear();
+let calMonth = _now.getMonth(); // 0始まり
+let selectedDate = todayStr();
+
+const RECIPE_OPTIONS = (() => {
+  const groups = {};
+  RECIPES.forEach(r => { (groups[r.catName] = groups[r.catName] || []).push(r); });
+  return Object.entries(groups).map(([g, rs]) =>
+    '<optgroup label="' + esc(g) + '">' +
+    rs.map(r => '<option value="' + r.id + '">' + esc(r.name) + "</option>").join("") +
+    "</optgroup>").join("");
+})();
+
+function dayMapFromHistory() {
+  const m = {};
+  state.history.forEach(h => {
+    if (!h || !h.date) return;
+    (h.recipeIds || []).forEach(id => { (m[h.date] = m[h.date] || []).push(id); });
+  });
+  return m;
+}
+
+function removeCooked(date, id) {
+  for (let i = 0; i < state.history.length; i++) {
+    const h = state.history[i];
+    if (h.date !== date) continue;
+    const j = (h.recipeIds || []).indexOf(id);
+    if (j >= 0) {
+      h.recipeIds.splice(j, 1);
+      if (!h.recipeIds.length) state.history.splice(i, 1);
+      return;
+    }
   }
+}
+
+function renderHistory() {
+  const dayMap = dayMapFromHistory();
+  const today = todayStr();
+
+  // ---- カレンダー ----
+  document.getElementById("calTitle").textContent = calYear + "年" + (calMonth + 1) + "月";
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  let cal = WDAY.map(w => '<div class="cal-dow">' + w + "</div>").join("");
+  for (let i = 0; i < firstDow; i++) cal += "<div></div>";
+  for (let d = 1; d <= daysInMonth; d++) {
+    const iso = calYear + "-" + String(calMonth + 1).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+    const recs = dayMap[iso] || [];
+    const cls = ["cal-day"];
+    if (recs.length) cls.push("has");
+    if (iso === selectedDate) cls.push("sel");
+    if (iso === today) cls.push("today");
+    if (iso > today) cls.push("future");
+    cal += '<div class="' + cls.join(" ") + '" data-day="' + iso + '">' +
+      '<span class="d-num">' + d + "</span>" +
+      '<span class="cal-dots">' + recs.slice(0, 4).map(() => '<span class="dot"></span>').join("") + "</span></div>";
+  }
+  document.getElementById("calGrid").innerHTML = cal;
+
+  // ---- 選択日の詳細 ----
+  const recs = dayMap[selectedDate] || [];
+  let dd = '<div class="dd-date">' + esc(fmtDate(selectedDate)) + "</div>";
+  dd += recs.length
+    ? recs.map(id =>
+        '<div class="dd-row"><span>' + esc(byId[id] ? byId[id].name : id) + "</span>" +
+        '<button type="button" class="rm-btn" data-dd-del="' + esc(id) + '" aria-label="この記録を削除">✕</button></div>').join("")
+    : '<p class="menu-empty">この日の記録はありません</p>';
+  if (selectedDate <= today) {
+    dd += '<div class="dd-add"><select id="ddSelect" aria-label="追加するレシピ">' + RECIPE_OPTIONS + "</select>" +
+      '<button type="button" class="btn btn-primary" id="ddAdd">追加</button></div>';
+  }
+  document.getElementById("dayDetail").innerHTML = dd;
   // カードの「前回」バッジと「今日作った」ボタン状態
   const last = {}, count = {};
   state.history.forEach(h => {
@@ -1431,7 +1553,6 @@ function renderHistory() {
       count[id] = (count[id] || 0) + 1;
     });
   });
-  const today = todayStr();
   document.querySelectorAll("details.card").forEach(d => {
     const id = d.dataset.id;
     const b = d.querySelector("[data-last]");
@@ -1499,11 +1620,33 @@ async function loadTokubai() {
 }
 
 document.getElementById("historyPage").addEventListener("click", e => {
-  const del = e.target.closest("[data-del-hist]");
-  if (!del) return;
-  state.history.splice(+del.dataset.delHist, 1);
-  renderHistory();
-  scheduleSave();
+  const dayEl = e.target.closest("[data-day]");
+  if (dayEl) { selectedDate = dayEl.dataset.day; renderHistory(); return; }
+  const del = e.target.closest("[data-dd-del]");
+  if (del) {
+    removeCooked(selectedDate, del.dataset.ddDel);
+    renderHistory();
+    scheduleSave();
+    return;
+  }
+  if (e.target.closest("#ddAdd")) {
+    const sel = document.getElementById("ddSelect");
+    if (sel && sel.value) {
+      state.history.push({ date: selectedDate, recipeIds: [sel.value] });
+      renderHistory();
+      scheduleSave();
+    }
+    return;
+  }
+  if (e.target.closest("#calPrev")) {
+    calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; }
+    renderHistory();
+    return;
+  }
+  if (e.target.closest("#calNext")) {
+    calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; }
+    renderHistory();
+  }
 });
 
 // ============================================================
