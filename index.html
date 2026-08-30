@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2E7D5B">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍲</text></svg>">
 <title>わが家のレシピ帳</title>
 <style>
   :root {
@@ -90,7 +92,7 @@
   .search-wrap input {
     width: 100%;
     font: inherit;
-    font-size: 15px;
+    font-size: 16px; /* 16px未満だとiOSがフォーカス時に自動ズームする */
     padding: 9px 36px 9px 14px;
     border: 1px solid var(--line);
     border-radius: 10px;
@@ -1123,8 +1125,8 @@ let activeTab = "menu";
 function normalizeState(s) {
   if (!s || typeof s !== "object") return JSON.parse(JSON.stringify(DEFAULT_STATE));
   if (!s.menu || typeof s.menu !== "object") s.menu = JSON.parse(JSON.stringify(DEFAULT_STATE.menu));
-  s.menu.recipeIds = (s.menu.recipeIds || []).filter(id => byId[id]);
-  s.menu.checked = s.menu.checked || [];
+  s.menu.recipeIds = (Array.isArray(s.menu.recipeIds) ? s.menu.recipeIds : []).filter(id => byId[id]);
+  s.menu.checked = (Array.isArray(s.menu.checked) ? s.menu.checked : []).filter(k => typeof k === "string");
   s.menu.servings = s.menu.servings === 2 ? 2 : 4;
   if (!Array.isArray(s.history)) s.history = [];
   return { menu: s.menu, history: s.history }; // 未知キーは持ち回らない
@@ -1426,23 +1428,34 @@ function renderMenu() {
   hintEl.innerHTML = hint;
 
   // 買い物リスト
+  document.getElementById("menuBtns").hidden = !ids.length;
+  renderShopping();
+}
+
+// 買い物リスト(チェック済みはグループ内の下に沈む)
+function renderShopping() {
+  const ids = state.menu.recipeIds;
   const shopPanel = document.getElementById("shopPanel");
   shopPanel.hidden = !ids.length;
-  document.getElementById("menuBtns").hidden = !ids.length;
-  if (ids.length) {
-    document.getElementById("shopServ").textContent = state.menu.servings + "人前ベース";
-    document.getElementById("shopList").innerHTML = buildShopping().filter(g => g.items.length).map(g =>
-      '<div class="shop-group"><div class="shop-group-name">' + esc(g.name) + "</div>" +
-      g.items.map(it => {
-        const done = state.menu.checked.includes(it.key);
+  if (!ids.length) return;
+  const groups = buildShopping().filter(g => g.items.length);
+  const isDone = it => state.menu.checked.includes(it.key);
+  let total = 0, done = 0;
+  groups.forEach(g => g.items.forEach(it => { total++; if (isDone(it)) done++; }));
+  document.getElementById("shopServ").textContent =
+    state.menu.servings + "人前ベース・" + (done === total ? "完了!" : "残り" + (total - done) + "件");
+  document.getElementById("shopList").innerHTML = groups.map(g => {
+    const sorted = [...g.items].sort((a, b) => (isDone(a) ? 1 : 0) - (isDone(b) ? 1 : 0));
+    return '<div class="shop-group"><div class="shop-group-name">' + esc(g.name) + "</div>" +
+      sorted.map(it => {
+        const d = isDone(it);
         const amts = it.lines.map(l =>
           esc(l.amt) + (it.lines.length > 1 ? "(" + esc(l.recipe) + ")" : "")).join("、");
-        return '<label class="shop-item' + (done ? " done" : "") + '">' +
-          '<input type="checkbox" data-check="' + esc(it.key) + '"' + (done ? " checked" : "") + ">" +
+        return '<label class="shop-item' + (d ? " done" : "") + '">' +
+          '<input type="checkbox" data-check="' + esc(it.key) + '"' + (d ? " checked" : "") + ">" +
           '<span><span class="s-name">' + esc(it.key) + '</span><br><span class="s-amt">' + amts + "</span></span></label>";
-      }).join("") + "</div>"
-    ).join("");
-  }
+      }).join("") + "</div>";
+  }).join("");
 }
 
 document.getElementById("menuPage").addEventListener("click", e => {
@@ -1457,7 +1470,7 @@ document.getElementById("menuPage").addEventListener("change", e => {
   const i = arr.indexOf(key);
   if (cb.checked && i < 0) arr.push(key);
   if (!cb.checked && i >= 0) arr.splice(i, 1);
-  cb.closest(".shop-item").classList.toggle("done", cb.checked);
+  renderShopping(); // チェック済みを下に沈めて残数を更新
   scheduleSave();
 });
 
@@ -1699,6 +1712,7 @@ tabsEl.addEventListener("click", e => {
     searchWrap.classList.remove("has-text");
   }
   render();
+  window.scrollTo(0, 0); // タブ切替時は先頭へ
 });
 
 searchEl.addEventListener("input", () => {
