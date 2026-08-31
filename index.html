@@ -543,6 +543,8 @@
     color: var(--ink);
   }
   .dd-add .btn { padding: 8px 16px; font-size: 13.5px; flex-shrink: 0; }
+  .dd-row [data-goto] { cursor: pointer; }
+  .dd-row [data-goto]:active { opacity: 0.6; }
 
   /* ---------- 特売メモ ---------- */
   .tokubai-entry { padding: 9px 0; border-bottom: 1px solid var(--line); }
@@ -694,6 +696,25 @@
     <p class="sync-chip" id="syncChip"></p>
   </div>
 
+  <!-- 履歴 -->
+  <div id="historyPage" hidden>
+    <div class="panel">
+      <h3>調理履歴 <span class="sub">日付をタップで詳細・追加</span></h3>
+      <div class="cal-head">
+        <button type="button" class="cal-nav" id="calPrev" aria-label="前の月">‹</button>
+        <div class="cal-title" id="calTitle"></div>
+        <button type="button" class="cal-nav" id="calNext" aria-label="次の月">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div id="dayDetail"></div>
+    </div>
+    <div class="panel" id="tokubaiPanel" hidden>
+      <h3>特売メモ <span class="sub">毎週のチラシから自動記録</span></h3>
+      <div id="tokubaiList"></div>
+    </div>
+  </div>
+
+
   <!-- 低温調理の基本ルール -->
   <div class="info-box" id="lowtempInfo" hidden>
     <strong>低温調理の基本ルール(65℃固定)</strong>
@@ -717,24 +738,6 @@
       <li>鶏コンソメ醤油 300g+サーモン塩麹 2切れ+豚味噌漬け 300g+温泉卵 4個</li>
       <li>→ 65℃/2.5時間。サーモンは1時間で先に引き上げ。主菜3種+副菜が一度に完成</li>
     </ul>
-  </div>
-
-  <!-- 履歴 -->
-  <div id="historyPage" hidden>
-    <div class="panel">
-      <h3>調理履歴 <span class="sub">日付をタップで詳細・追加</span></h3>
-      <div class="cal-head">
-        <button type="button" class="cal-nav" id="calPrev" aria-label="前の月">‹</button>
-        <div class="cal-title" id="calTitle"></div>
-        <button type="button" class="cal-nav" id="calNext" aria-label="次の月">›</button>
-      </div>
-      <div class="cal-grid" id="calGrid"></div>
-      <div id="dayDetail"></div>
-    </div>
-    <div class="panel" id="tokubaiPanel" hidden>
-      <h3>特売メモ <span class="sub">毎週のチラシから自動記録</span></h3>
-      <div id="tokubaiList"></div>
-    </div>
   </div>
 
   <!-- 運用 -->
@@ -4433,7 +4436,7 @@ function renderHistory() {
   let dd = '<div class="dd-date">' + esc(fmtDate(selectedDate)) + "</div>";
   dd += recs.length
     ? recs.map(id =>
-        '<div class="dd-row"><span>' + esc(byId[id] ? byId[id].name : id) + "</span>" +
+        '<div class="dd-row"><span data-goto="' + esc(id) + '">' + esc(byId[id] ? byId[id].name : id) + "</span>" +
         '<button type="button" class="rm-btn" data-dd-del="' + esc(id) + '" aria-label="この記録を削除">✕</button></div>').join("")
     : '<p class="menu-empty">この日の記録はありません</p>';
   if (selectedDate <= today) {
@@ -4528,11 +4531,21 @@ async function loadTokubai() {
 
 document.getElementById("historyPage").addEventListener("click", e => {
   const dayEl = e.target.closest("[data-day]");
-  if (dayEl) { selectedDate = dayEl.dataset.day; renderHistory(); return; }
+  if (dayEl) { selectedDate = dayEl.dataset.day; renderHistory(); render(); return; }
+  const goto = e.target.closest("[data-goto]");
+  if (goto) {
+    const card = document.querySelector('details.card[data-id="' + goto.dataset.goto + '"]');
+    if (card) {
+      card.open = true;
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    return;
+  }
   const del = e.target.closest("[data-dd-del]");
   if (del) {
     removeCooked(selectedDate, del.dataset.ddDel);
     renderHistory();
+    render();
     scheduleSave();
     return;
   }
@@ -4541,6 +4554,7 @@ document.getElementById("historyPage").addEventListener("click", e => {
     if (sel && sel.value) {
       state.history.push({ date: selectedDate, recipeIds: [sel.value] });
       renderHistory();
+      render();
       scheduleSave();
     }
     return;
@@ -4623,12 +4637,17 @@ function render() {
 
   const recipeTab = ["hotcook", "lowtemp", "arrange", "range", "oven", "airfryer", "breakfast", "sweets"].includes(activeTab);
   const menuTab = !searching && activeTab === "menu";
-  document.getElementById("menuRecipesHead").hidden = !menuTab || !state.menu.recipeIds.length;
+  const historyTab = !searching && activeTab === "history";
+  const dayIds = historyTab ? new Set(dayMapFromHistory()[selectedDate] || []) : null;
+  const head = document.getElementById("menuRecipesHead");
+  head.hidden = !((menuTab && state.menu.recipeIds.length) || (historyTab && dayIds.size));
+  head.textContent = historyTab ? fmtDate(selectedDate) + " に作ったレシピ" : "献立のレシピ";
   let visible = 0;
   document.querySelectorAll("details.card").forEach(d => {
     let show;
     if (searching) show = q.split(/\s+/).every(w => d.dataset.search.includes(w));
     else if (menuTab) show = state.menu.recipeIds.includes(d.dataset.id);
+    else if (historyTab) show = dayIds.has(d.dataset.id);
     else show = recipeTab && activeTab === d.dataset.cat &&
       (!genreFilter || d.dataset.genre === genreFilter);
     d.style.display = show ? "" : "none";
