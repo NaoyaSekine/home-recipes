@@ -775,7 +775,7 @@ const RECIPES = [
     id: "tandoori", cat: "hotcook", catName: "ホットクック",
     name: "タンドリー風チキン",
     desc: "袋で揉んで漬けるだけ。冷凍仕込みストック可",
-    time: "下味30分〜", protein: true, keep: "冷蔵3〜4日",
+    time: "下味30分〜+調理約25分", protein: true, keep: "冷蔵3〜4日",
     ing: [
       { n: "鶏むね肉", t4: "600g", t2: "300g" },
       { n: "ヨーグルト", t4: "大さじ4", t2: "大さじ2" },
@@ -793,7 +793,7 @@ const RECIPES = [
     id: "tebamoto", cat: "hotcook", catName: "ホットクック",
     name: "手羽元のさっぱり煮",
     desc: "煮込みメニューで放置。冷めても美味しい",
-    time: "煮込み放置", protein: true, keep: "冷蔵4日",
+    time: "煮込み約35分", protein: true, keep: "冷蔵4日",
     ing: [
       { n: "手羽元", t4: "8本", t2: "4本" },
       { n: "酢", p: 1, t4: "大さじ3", t2: "大さじ1.5" },
@@ -811,7 +811,7 @@ const RECIPES = [
     id: "salt-soup", cat: "hotcook", catName: "ホットクック",
     name: "鶏と野菜の塩スープ",
     desc: "昼の味噌汁代わり。タンパク質+野菜が一度に",
-    time: "スープメニュー", protein: true, keep: "冷蔵3〜4日",
+    time: "約25分", protein: true, keep: "冷蔵3〜4日",
     ing: [
       { n: "鶏むね肉", t: "適量" },
       { n: "キャベツ・きのこ等", t: "適量" },
@@ -827,7 +827,7 @@ const RECIPES = [
     id: "teriyaki", cat: "hotcook", catName: "ホットクック",
     name: "照り焼き風チキン",
     desc: "甘辛・味濃いめで子供の鉄板",
-    time: "煮物メニュー", kids: true, protein: true, keep: "冷蔵3〜4日",
+    time: "約35分", kids: true, protein: true, keep: "冷蔵3〜4日",
     ing: [
       { n: "鶏むね or もも肉", shop: "鶏むね(orもも)肉", t: "適量" },
       { n: "醤油", p: 1, t4: "大さじ3", t2: "大さじ1.5" },
@@ -867,7 +867,7 @@ const RECIPES = [
     added: "2026-08-30",
     name: "牛丼の具",
     desc: "平日昼はレンジ+温泉卵のせが最強",
-    time: "煮物メニュー", kids: true, protein: true, keep: "冷蔵4日",
+    time: "約30分", kids: true, protein: true, keep: "冷蔵4日",
     ing: [
       { n: "牛こま切れ肉", t4: "400g", t2: "200g" },
       { n: "玉ねぎ(くし切り)", shop: "玉ねぎ", t4: "2個", t2: "1個" },
@@ -891,7 +891,7 @@ const RECIPES = [
     added: "2026-08-30",
     name: "きのこの和風マリネ",
     desc: "冷蔵5日もつ常備菜。週後半の野菜不足を埋める",
-    time: "蒸し10分", keep: "冷蔵5日",
+    time: "約15分", keep: "冷蔵5日",
     ing: [
       { n: "きのこ3種(しめじ・舞茸・エリンギ等)", shop: "きのこ3種", t4: "計400g", t2: "計200g" },
       { n: "酢", p: 1, t4: "大さじ2", t2: "大さじ1" },
@@ -912,7 +912,7 @@ const RECIPES = [
     added: "2026-08-30",
     name: "無水キャベツとベーコンの蒸し煮",
     desc: "キャベツが甘くなる、子供が食べる野菜枠",
-    time: "無水蒸しメニュー", kids: true, keep: "冷蔵3日",
+    time: "約20分", kids: true, keep: "冷蔵3日",
     ing: [
       { n: "キャベツ(ざく切り)", shop: "キャベツ", t4: "1/2玉", t2: "1/4玉" },
       { n: "ベーコン", t4: "4枚", t2: "2枚" },
@@ -1181,7 +1181,7 @@ const RECIPES = [
     id: "carrot-glace", cat: "lowtemp", catName: "低温調理",
     name: "にんじんのグラッセ風",
     desc: "主菜のすき間に沈める副菜。薄切りがコツ",
-    time: "主菜と同時", kids: true, keep: "冷蔵3〜4日",
+    time: "主菜と同時(2〜2.5時間)", kids: true, keep: "冷蔵3〜4日",
     bags4: 1, bags2: 1,
     ing: [
       { n: "にんじん", t4: "2本(約300g)", t2: "1本" },
@@ -1200,7 +1200,7 @@ const RECIPES = [
     id: "sweetpotato-butter", cat: "lowtemp", catName: "低温調理",
     name: "さつまいもバター",
     desc: "主菜のすき間に沈める副菜。おやつにも",
-    time: "主菜と同時", kids: true, keep: "冷蔵3〜4日",
+    time: "主菜と同時(2〜2.5時間)", kids: true, keep: "冷蔵3〜4日",
     bags4: 1, bags2: 1,
     ing: [
       { n: "さつまいも", t4: "1本(約250g)", t2: "小1本" },
@@ -1217,7 +1217,7 @@ const RECIPES = [
     added: "2026-08-30",
     name: "パプリカのマリネ",
     desc: "65℃のシャキ感がマリネに好都合な同時調理枠",
-    time: "主菜と同時", keep: "冷蔵4日",
+    time: "主菜と同時(2〜2.5時間)", keep: "冷蔵4日",
     bags4: 1, bags2: 1,
     ing: [
       { n: "パプリカ(赤・黄)", shop: "パプリカ", t4: "各1個", t2: "計1個" },
@@ -1237,7 +1237,7 @@ const RECIPES = [
     id: "onsen-egg", cat: "lowtemp", catName: "低温調理",
     name: "温泉卵",
     desc: "殻のまま水に直接沈めるだけ。袋不要",
-    time: "65〜68℃", kids: true, protein: true, keep: "冷蔵2〜3日",
+    time: "65〜68℃・35〜40分", kids: true, protein: true, keep: "冷蔵2〜3日",
     bags4: 0, bags2: 0,
     ing: [
       { n: "卵", t4: "4個", t2: "2個" }
@@ -1297,7 +1297,7 @@ const RECIPES = [
     added: "2026-08-30",
     name: "プルコギ風下味(牛こま)",
     desc: "袋で漬けて冷凍ストック→食べる日に炒め5分",
-    time: "炒め5分", kids: true, protein: true, keep: "漬け冷蔵2日・冷凍1ヶ月",
+    time: "漬け30分〜+炒め5分", kids: true, protein: true, keep: "漬け冷蔵2日・冷凍1ヶ月",
     ing: [
       { n: "牛こま切れ肉", t4: "300g", t2: "150g" },
       { n: "玉ねぎ(薄切り)", shop: "玉ねぎ", t4: "1/2個", t2: "1/4個" },
@@ -1336,7 +1336,7 @@ const RECIPES = [
     id: "overnight-oats", cat: "breakfast", catName: "朝食",
     name: "オーバーナイトオーツ",
     desc: "夜に混ぜて冷蔵→朝そのまま。腹持ち強化版",
-    time: "夜仕込み", kids: true, noScale: true,
+    time: "夜5分仕込み", kids: true, noScale: true,
     ing: [
       { n: "ヨーグルト", t: "1食分" },
       { n: "牛乳", t: "適量" },
@@ -1354,7 +1354,7 @@ const RECIPES = [
     id: "curry-dip", cat: "breakfast", catName: "朝食",
     name: "カレー粉ヨーグルトディップ",
     desc: "サラダチキンのソース兼タンドリー下味",
-    time: "混ぜるだけ", noScale: true,
+    time: "1分", noScale: true,
     ing: [
       { n: "ヨーグルト", t: "適量" },
       { n: "カレー粉", p: 1, t: "適量" },
@@ -1393,7 +1393,7 @@ const RECIPES = [
     added: "2026-08-31",
     name: "りんごのコンポート",
     desc: "朝ヨーグルトのトッピングに毎日使える",
-    time: "煮物メニュー", kids: true, keep: "冷蔵5日〜1週間",
+    time: "約30分", kids: true, keep: "冷蔵5日〜1週間",
     noScale: true, servLabel: "作りやすい量",
     ing: [
       { n: "りんご", t: "3〜4個" },
@@ -1412,7 +1412,7 @@ const RECIPES = [
     added: "2026-08-31",
     name: "蒸しさつまいも",
     desc: "材料1つ。子供の平日おやつストック",
-    time: "蒸しメニュー", kids: true, keep: "冷蔵4〜5日",
+    time: "蒸し約40分", kids: true, keep: "冷蔵4〜5日",
     noScale: true, servLabel: "作りやすい量",
     ing: [
       { n: "さつまいも(中)", shop: "さつまいも", t: "4〜5本" }
@@ -1449,7 +1449,7 @@ const RECIPES = [
     added: "2026-08-31",
     name: "自家製ヨーグルト",
     desc: "牛乳1Lを一気にヨーグルト化。朝食のコスパ大幅アップ",
-    time: "発酵メニュー", keep: "冷蔵1週間",
+    time: "発酵約7時間", keep: "冷蔵1週間",
     noScale: true, servLabel: "1L分",
     ing: [
       { n: "牛乳", t: "1L" },
@@ -1470,7 +1470,7 @@ const RECIPES = [
     added: "2026-08-31",
     name: "蒸しパン",
     desc: "混ぜて蒸すだけ。ココア・さつまいもアレンジ可",
-    time: "蒸し15分", kids: true, keep: "当日〜翌日",
+    time: "約20分(蒸し15分)", kids: true, keep: "当日〜翌日",
     noScale: true, servLabel: "カップ5〜6個分",
     ing: [
       { n: "ホットケーキミックス", p: 1, t: "200g" },
@@ -1490,7 +1490,7 @@ const RECIPES = [
     added: "2026-08-31",
     name: "蒸し大豆・蒸し黒豆",
     desc: "そのままおやつ、サラダのトッピングに",
-    time: "浸水一晩+蒸し", kids: true, protein: true, keep: "冷蔵5日・冷凍1ヶ月",
+    time: "浸水一晩+蒸し約1時間", kids: true, protein: true, keep: "冷蔵5日・冷凍1ヶ月",
     noScale: true, servLabel: "作りやすい量",
     ing: [
       { n: "乾燥大豆または黒豆", shop: "乾燥大豆(or黒豆)", t: "200g" },
